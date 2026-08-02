@@ -879,3 +879,29 @@ create policy audit_logs_select on public.audit_logs
   for select using (
     (organization_id = auth_organization_id() and is_org_admin_or_super()) or is_super_admin()
   );
+
+-- ----------------------------------------------------------------------------
+-- 9. Privilegios estándar de Supabase sobre el esquema public
+-- ----------------------------------------------------------------------------
+-- En un proyecto gestionado, la plataforma otorga estos GRANTs al aprovisionar
+-- el proyecto (no viven en las migraciones del usuario, por lo que la
+-- introspección de information_schema no los capturó como DDL propio). La
+-- CLI local (`supabase db start`, usada en CI) NO los reproduce por sí sola,
+-- así que sin esto cualquier tabla nueva queda sin privilegios a nivel SQL
+-- para anon/authenticated/service_role — un error de "permission denied"
+-- distinto y anterior a cualquier política RLS.
+grant usage on schema public to anon, authenticated, service_role;
+
+grant all on all tables in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+grant all on all routines in schema public to anon, authenticated, service_role;
+
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant all on routines to anon, authenticated, service_role;
+
+-- El GRANT ALL de arriba reabre update/delete sobre audit_logs para
+-- authenticated/anon; se vuelve a revocar aquí (el REVOKE posterior es el
+-- que queda vigente) para preservar la inmutabilidad exigida por el Caso 4
+-- de la suite pgTAP.
+revoke update, delete on public.audit_logs from authenticated, anon;
