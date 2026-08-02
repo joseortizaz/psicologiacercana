@@ -768,13 +768,14 @@ create policy clinical_records_update on public.clinical_records
   );
 
 -- consultations
--- Nota: la condición EXISTS de esta policy en producción compara
--- `cr.patient_id = cr.patient_id` y `cr.organization_id = cr.organization_id`
--- (columna contra sí misma) en vez de contra `consultations.patient_id` /
--- `consultations.organization_id`. Es casi con certeza un bug de cuando se
--- escribió originalmente. Se replica TAL CUAL aquí para que la migración
--- sea fiel a lo que existe en producción — no se corrige sin que el usuario
--- lo pida explícitamente.
+-- Nota: la condición EXISTS de esta policy, tal como existía en producción
+-- al momento de esta reconstrucción, comparaba `cr.patient_id = cr.patient_id`
+-- y `cr.organization_id = cr.organization_id` (columna contra sí misma) en
+-- vez de contra `consultations.patient_id` / `consultations.organization_id`.
+-- Se replica TAL CUAL aquí para que este archivo sea fiel a lo que existía en
+-- ese momento. El bug se corrige en la migración posterior
+-- 20260802210000_fix_consultations_insert_policy.sql — no se corrige aquí
+-- para no reescribir la historia de lo que había en producción.
 drop policy if exists consultations_insert on public.consultations;
 create policy consultations_insert on public.consultations
   for insert with check (
