@@ -1,0 +1,8 @@
+{
+  "/login/page": "app/login/page.js",
+  "/(protected)/org-admin/page": "app/(protected)/org-admin/page.js",
+  "/(protected)/therapist/page": "app/(protected)/therapist/page.js",
+  "/(protected)/therapist/patients/page": "app/(protected)/therapist/patients/page.js",
+  "/(protected)/therapist/patients/[id]/page": "app/(protected)/therapist/patients/[id]/page.js",
+  "/(protected)/therapist/appointments/page": "app/(protected)/therapist/appointments/page.js"
+}

@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap");
+
+body {
+  @apply bg-paper text-ink font-sans antialiased;
+}
+
+::selection {
+  @apply bg-coral/20;
+}
+
+:focus-visible {
+  outline: 2px solid theme("colors.deep");
+  outline-offset: 2px;
+}

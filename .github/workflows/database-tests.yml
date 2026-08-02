@@ -1,0 +1,29 @@
+name: database-tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  pgtap:
+    name: Migraciones + pgTAP (aislamiento RLS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # `db start` levanta el stack local (Docker, ya viene en el runner)
+      # y aplica todas las migraciones de supabase/migrations desde cero,
+      # incluyendo la baseline. Si la baseline tiene un error de sintaxis
+      # o una referencia rota, este paso falla aquí — antes de correr
+      # ningún test.
+      - run: supabase db start
+
+      # Corre todos los archivos de supabase/tests/database/*.sql en orden
+      # alfabético (000-setup primero, luego 001-multi-tenant-isolation).
+      # Un solo assert en rojo bloquea el merge.
+      - run: supabase test db

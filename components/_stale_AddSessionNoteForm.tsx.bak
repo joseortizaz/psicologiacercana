@@ -1,0 +1,93 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
+export function AddSessionNoteForm({
+  organizationId,
+  therapistId,
+  patientId,
+}: {
+  organizationId: string;
+  therapistId: string;
+  patientId: string;
+}) {
+  const router = useRouter();
+  const supabase = createClient();
+
+  const [sessionDate, setSessionDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [content, setContent] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const { error: insertError } = await supabase.from("session_notes").insert({
+      organization_id: organizationId,
+      therapist_id: therapistId,
+      patient_id: patientId,
+      session_date: sessionDate,
+      content,
+    });
+
+    setLoading(false);
+
+    if (insertError) {
+      setError(insertError.message);
+      return;
+    }
+
+    setContent("");
+    router.refresh();
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 rounded-lg border border-line bg-white/60 p-6"
+    >
+      <p className="font-display text-lg text-deep">Nueva nota de sesión</p>
+
+      <div className="flex flex-col gap-1.5 sm:w-1/2">
+        <label className="text-sm font-medium text-ink/80">Fecha de sesión</label>
+        <input
+          required
+          type="date"
+          value={sessionDate}
+          onChange={(e) => setSessionDate(e.target.value)}
+          className="rounded-md border border-line bg-white px-3.5 py-2.5 outline-none focus:border-deep"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-ink/80">Notas</label>
+        <textarea
+          required
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          rows={5}
+          className="rounded-md border border-line bg-white px-3.5 py-2.5 outline-none focus:border-deep"
+          placeholder="Observaciones de la sesión, avances, plan a seguir..."
+        />
+      </div>
+
+      {error && (
+        <p role="alert" className="text-sm text-clay">
+          {error}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="self-start rounded-md bg-deep px-4 py-2.5 text-sm font-medium text-paper transition hover:bg-deepLight disabled:opacity-60"
+      >
+        {loading ? "Guardando..." : "Guardar nota"}
+      </button>
+    </form>
+  );
+}
