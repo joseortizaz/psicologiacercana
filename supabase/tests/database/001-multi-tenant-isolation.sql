@@ -5,11 +5,14 @@
 --   3. therapist no puede modificar una nota clínica de otro terapeuta.
 --   4. Ningún rol de aplicación puede UPDATE/DELETE audit_logs.
 --   5. Un token de Org A no puede insertar filas con organization_id de Org B.
--- Más 3 controles adicionales (RLS habilitado en todo public, y dos
--- controles positivos para confirmar que no estamos bloqueando de más).
+-- Más un caso 6 de regresión (el clinical_record_id propio no autoriza un
+-- patient_id ajeno en consultations — bug corregido en
+-- 20260802210000_fix_consultations_insert_policy.sql) y 3 controles
+-- adicionales (RLS habilitado en todo public, y dos controles positivos
+-- para confirmar que no estamos bloqueando de más).
 
 begin;
-select plan(9);
+select plan(10);
 
 -- ---------------------------------------------------------------
 -- Setup (como service_role, que ignora RLS)
@@ -83,6 +86,17 @@ insert into public.clinical_records (organization_id, clinic_id, patient_id, pri
 select p.organization_id, p.clinic_id, p.id, tests.get_supabase_uid('therapist_a1'), 'Motivo original'
 from public.patients p where p.full_name = 'Paciente Org A';
 
+-- Capturamos, todavía como service_role, el id del expediente de Org A y el
+-- id del paciente de Org B. Los usamos en el Caso 6 para intentar crear una
+-- consulta cuyo clinical_record_id sí es propio (de terapeuta_a1) pero cuyo
+-- patient_id NO coincide con el paciente real de ese expediente — el
+-- escenario exacto que el bug de auto-comparación dejaba pasar.
+select cr.id as clinical_record_a_id
+from public.clinical_records cr join public.patients p on p.id = cr.patient_id
+where p.full_name = 'Paciente Org A' \gset
+
+select id as patient_b_id from public.patients where full_name = 'Paciente Org B' \gset
+
 -- ---------------------------------------------------------------
 -- Caso 1: aislamiento cruzado de organización (patients)
 -- ---------------------------------------------------------------
@@ -151,6 +165,34 @@ select throws_ok(
   '42501',
   null,
   'Caso 5: un usuario de Org A no puede insertar un paciente con organization_id de Org B'
+);
+
+-- ---------------------------------------------------------------
+-- Caso 6: clinical_record_id propio no autoriza cualquier patient_id
+-- ---------------------------------------------------------------
+-- Regresión del bug corregido en
+-- 20260802210000_fix_consultations_insert_policy.sql: la policy original
+-- comparaba cr.patient_id contra sí misma (siempre verdadero), así que un
+-- terapeuta podía insertar una consulta con clinical_record_id de su propio
+-- expediente pero patient_id de OTRO paciente. therapist_a1 ya está
+-- autenticado desde el Caso 5.
+select throws_ok(
+  format(
+    $$ insert into consultations (organization_id, clinic_id, patient_id, clinical_record_id, therapist_id)
+       values (
+         (select organization_id from patients where full_name = 'Paciente Org A'),
+         (select clinic_id from patients where full_name = 'Paciente Org A'),
+         '%s',
+         '%s',
+         '%s'
+       ) $$,
+    :'patient_b_id',
+    :'clinical_record_a_id',
+    tests.get_supabase_uid('therapist_a1')
+  ),
+  '42501',
+  null,
+  'Caso 6: el clinical_record_id propio no autoriza insertar con patient_id de otro paciente'
 );
 
 -- ---------------------------------------------------------------
