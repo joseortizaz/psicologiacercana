@@ -23,12 +23,17 @@
 --     (la función sí se recuperó completa), pero no se pudo listar su
 --     nombre/definición exacta de registro. Se reconstruye con un nombre
 --     razonable; si CI falla por "already exists", ajustar o quitar.
---   - `appointments_no_overlap`: en el esquema original introspeccionado era
---     solo un índice GIST (no un EXCLUDE constraint), así que NO impedía
---     agendar citas encimadas para un mismo terapeuta. Se replica aquí tal
---     cual se observó, por fidelidad histórica. La migración
---     20260803000000_appointments_no_overlap_exclude.sql lo convierte en un
---     EXCLUDE constraint real.
+--   - `appointments_no_overlap`: la introspección original (2026-08-02) lo
+--     detectó como un simple índice GIST, no un EXCLUDE constraint, así que
+--     se replicó aquí como índice. Al aplicar la migración
+--     20260803000000_appointments_no_overlap_exclude.sql contra producción
+--     (2026-08-03) se descubrió que esa lectura era incorrecta: producción
+--     YA tenía un EXCLUDE constraint real con ese nombre y esa definición
+--     exacta. Se deja el índice tal cual aquí (no se corrige, por fidelidad
+--     histórica de este archivo) porque la migración de conversión ahora es
+--     idempotente: si el EXCLUDE constraint ya existe no hace nada, y si
+--     solo hay un índice (como en un CI limpio levantado desde este mismo
+--     baseline) lo convierte.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
