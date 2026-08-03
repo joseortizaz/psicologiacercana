@@ -42,10 +42,18 @@ export function CreatePatientForm({
   organizationId,
   clinicId,
   therapistId,
+  createdBy,
+  assignableTherapists,
 }: {
   organizationId: string;
   clinicId: string;
-  therapistId: string;
+  /** Terapeuta fijo a asignar (uso desde el panel de terapeuta: se asigna a sí mismo). */
+  therapistId?: string;
+  /** Usuario que crea el registro. Si no se da, se usa therapistId (comportamiento previo). */
+  createdBy?: string;
+  /** Si se da, se muestra un selector de terapeuta en vez de asignar therapistId fijo
+   *  (uso desde el panel de assistant, que no es terapeuta y asigna en nombre de otro). */
+  assignableTherapists?: { id: string; full_name: string }[];
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -53,6 +61,7 @@ export function CreatePatientForm({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTherapistId, setSelectedTherapistId] = useState(therapistId ?? "");
 
   const [fullName, setFullName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -98,6 +107,7 @@ export function CreatePatientForm({
     setEmergencyContactName("");
     setEmergencyContactPhone("");
     setEmergencyContactRelationship("");
+    setSelectedTherapistId(therapistId ?? "");
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -108,8 +118,8 @@ export function CreatePatientForm({
     const { error: insertError } = await supabase.from("patients").insert({
       organization_id: organizationId,
       clinic_id: clinicId,
-      primary_therapist_id: therapistId,
-      created_by: therapistId,
+      primary_therapist_id: selectedTherapistId || null,
+      created_by: createdBy ?? therapistId ?? null,
       full_name: fullName,
       date_of_birth: dateOfBirth,
       category,
@@ -211,6 +221,22 @@ export function CreatePatientForm({
             placeholder="CURP / DNI / etc."
           />
         </Field>
+        {assignableTherapists && (
+          <Field label="Terapeuta asignado (opcional)">
+            <select
+              value={selectedTherapistId}
+              onChange={(e) => setSelectedTherapistId(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Sin asignar</option>
+              {assignableTherapists.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.full_name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
       </FieldGroup>
 
       <FieldGroup title="Contacto">
