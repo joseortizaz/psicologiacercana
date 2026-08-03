@@ -23,10 +23,12 @@
 --     (la función sí se recuperó completa), pero no se pudo listar su
 --     nombre/definición exacta de registro. Se reconstruye con un nombre
 --     razonable; si CI falla por "already exists", ajustar o quitar.
---   - `appointments_no_overlap` es un índice GIST, no un EXCLUDE constraint:
---     en producción NO impide agendar citas encimadas para un mismo
---     terapeuta, solo acelera esa consulta. Se replica tal cual (no se
---     "corrige" a EXCLUDE porque cambiaría el comportamiento real).
+--   - `appointments_no_overlap`: en el esquema original introspeccionado era
+--     solo un índice GIST (no un EXCLUDE constraint), así que NO impedía
+--     agendar citas encimadas para un mismo terapeuta. Se replica aquí tal
+--     cual se observó, por fidelidad histórica. La migración
+--     20260803000000_appointments_no_overlap_exclude.sql lo convierte en un
+--     EXCLUDE constraint real.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
