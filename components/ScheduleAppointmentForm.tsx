@@ -23,11 +23,16 @@ export function ScheduleAppointmentForm({
   clinicId,
   therapistId,
   patientId,
+  assignableTherapists,
 }: {
   organizationId: string;
   clinicId: string;
-  therapistId: string;
+  /** Terapeuta fijo (uso desde el panel de terapeuta: se agenda a sí mismo). */
+  therapistId?: string;
   patientId: string;
+  /** Si se da, se muestra un selector obligatorio de terapeuta en vez de usar
+   *  therapistId fijo (uso desde el panel de assistant). */
+  assignableTherapists?: { id: string; full_name: string }[];
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -40,6 +45,9 @@ export function ScheduleAppointmentForm({
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTherapistId, setSelectedTherapistId] = useState(
+    therapistId ?? assignableTherapists?.[0]?.id ?? "",
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,7 +60,7 @@ export function ScheduleAppointmentForm({
     const { error: insertError } = await supabase.from("appointments").insert({
       organization_id: organizationId,
       clinic_id: clinicId,
-      therapist_id: therapistId,
+      therapist_id: selectedTherapistId,
       patient_id: patientId,
       start_time: start.toISOString(),
       end_time: end.toISOString(),
@@ -94,6 +102,26 @@ export function ScheduleAppointmentForm({
       <p className="font-display text-lg text-deep">Agendar cita</p>
 
       <div className="grid gap-4 sm:grid-cols-2">
+        {assignableTherapists && (
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <label className="text-sm font-medium text-ink/80">Terapeuta</label>
+            <select
+              required
+              value={selectedTherapistId}
+              onChange={(e) => setSelectedTherapistId(e.target.value)}
+              className="rounded-md border border-line bg-white px-3.5 py-2.5 outline-none focus:border-deep"
+            >
+              <option value="" disabled>
+                Selecciona un terapeuta
+              </option>
+              {assignableTherapists.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.full_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-ink/80">Fecha y hora</label>
           <input

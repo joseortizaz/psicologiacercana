@@ -26,6 +26,14 @@ export default async function HomePage() {
     redirect("/therapist");
   }
 
+  if (profile?.role === "assistant") {
+    redirect("/assistant");
+  }
+
+  if (profile?.role === "supervisor") {
+    redirect("/supervisor");
+  }
+
   return (
     <div className="rounded-lg border border-line bg-white/60 p-8">
       <p className="font-display text-xl text-deep">Bienvenido a PsyClinic Cloud</p>
