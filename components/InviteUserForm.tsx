@@ -4,13 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Clinic, UserRole } from "@/lib/types";
-
-const INVITABLE_ROLES: { value: UserRole; label: string; needsClinic: boolean }[] = [
-  { value: "therapist", label: "Terapeuta", needsClinic: true },
-  { value: "assistant", label: "Asistente administrativa", needsClinic: true },
-  { value: "supervisor", label: "Supervisor clínico", needsClinic: true },
-  { value: "org_admin", label: "Administrador de clínica", needsClinic: false },
-];
+import { ASSIGNABLE_ROLES } from "@/lib/roles";
 
 export function InviteUserForm({ clinics }: { clinics: Clinic[] }) {
   const router = useRouter();
@@ -24,7 +18,7 @@ export function InviteUserForm({ clinics }: { clinics: Clinic[] }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedRole = INVITABLE_ROLES.find((r) => r.value === role)!;
+  const selectedRole = ASSIGNABLE_ROLES.find((r) => r.value === role)!;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -107,7 +101,7 @@ export function InviteUserForm({ clinics }: { clinics: Clinic[] }) {
           onChange={(e) => setRole(e.target.value as UserRole)}
           className="rounded-md border border-line bg-white px-3.5 py-2.5 outline-none focus:border-deep"
         >
-          {INVITABLE_ROLES.map((r) => (
+          {ASSIGNABLE_ROLES.map((r) => (
             <option key={r.value} value={r.value}>
               {r.label}
             </option>

@@ -7,24 +7,48 @@ export interface Profile {
   role: UserRole;
   full_name: string;
   email: string;
+  phone: string | null;
+  license_number: string | null;
+  specialty: string | null;
+  avatar_url: string | null;
   active: boolean;
+  invited_by: string | null;
+  created_at: string;
+  updated_at: string;
 }
+
+export type OrganizationPlan = "trial" | "basic" | "professional" | "enterprise";
+export type OrganizationStatus = "active" | "suspended" | "cancelled";
 
 export interface Organization {
   id: string;
   name: string;
-  plan: "trial" | "basic" | "professional" | "enterprise";
-  status: "active" | "suspended" | "cancelled";
+  legal_name: string | null;
+  tax_id: string | null;
+  plan: OrganizationPlan;
+  status: OrganizationStatus;
   billing_email: string | null;
+  country: string;
+  timezone: string;
+  trial_ends_at: string | null;
+  max_clinics: number;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Clinic {
   id: string;
   organization_id: string;
   name: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  timezone: string | null;
+  logo_url: string | null;
+  primary_color: string | null;
   active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 export type PatientCategory = "child" | "adolescent" | "adult";
