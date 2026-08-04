@@ -23,23 +23,53 @@ export default async function OrgAdminPage() {
     redirect("/");
   }
 
-  const [{ data: clinics }, { data: team }] = await Promise.all([
-    supabase
-      .from("clinics")
-      .select("id, organization_id, name, active, created_at")
-      .order("created_at", { ascending: true })
-      .returns<Clinic[]>(),
-    supabase
-      .from("profiles")
-      .select("id, organization_id, clinic_id, role, full_name, email, active")
-      .order("full_name", { ascending: true })
-      .returns<Profile[]>(),
-  ]);
+  const [{ data: clinics }, { data: team }, { count: patientCount }, { count: upcomingCount }] =
+    await Promise.all([
+      supabase
+        .from("clinics")
+        .select("id, organization_id, name, active, created_at")
+        .order("created_at", { ascending: true })
+        .returns<Clinic[]>(),
+      supabase
+        .from("profiles")
+        .select("id, organization_id, clinic_id, role, full_name, email, active")
+        .order("full_name", { ascending: true })
+        .returns<Profile[]>(),
+      supabase.from("patients").select("id", { count: "exact", head: true }).eq("active", true),
+      supabase
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["scheduled", "confirmed"])
+        .gte("start_time", new Date().toISOString()),
+    ]);
 
   const clinicNameById = new Map((clinics ?? []).map((c) => [c.id, c.name]));
 
   return (
     <div className="flex flex-col gap-12">
+      <section className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-lg border border-line bg-white/60 p-6">
+          <p className="text-xs uppercase tracking-wide text-ink/40">Pacientes activos</p>
+          <p className="mt-2 font-display text-3xl text-deep">{patientCount ?? 0}</p>
+          <Link
+            href="/org-admin/patients"
+            className="mt-3 inline-block text-sm font-medium text-deep underline decoration-deep/30 underline-offset-2"
+          >
+            Ver pacientes
+          </Link>
+        </div>
+        <div className="rounded-lg border border-line bg-white/60 p-6">
+          <p className="text-xs uppercase tracking-wide text-ink/40">Próximas citas</p>
+          <p className="mt-2 font-display text-3xl text-deep">{upcomingCount ?? 0}</p>
+          <Link
+            href="/org-admin/appointments"
+            className="mt-3 inline-block text-sm font-medium text-deep underline decoration-deep/30 underline-offset-2"
+          >
+            Ver agenda
+          </Link>
+        </div>
+      </section>
+
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <p className="font-display text-2xl text-deep">Sucursales</p>

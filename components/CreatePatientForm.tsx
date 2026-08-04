@@ -44,16 +44,22 @@ export function CreatePatientForm({
   therapistId,
   createdBy,
   assignableTherapists,
+  assignableClinics,
 }: {
   organizationId: string;
-  clinicId: string;
+  /** Clínica fija (uso desde assistant/therapist, que operan en una sola clínica). */
+  clinicId?: string;
   /** Terapeuta fijo a asignar (uso desde el panel de terapeuta: se asigna a sí mismo). */
   therapistId?: string;
   /** Usuario que crea el registro. Si no se da, se usa therapistId (comportamiento previo). */
   createdBy?: string;
   /** Si se da, se muestra un selector de terapeuta en vez de asignar therapistId fijo
-   *  (uso desde el panel de assistant, que no es terapeuta y asigna en nombre de otro). */
-  assignableTherapists?: { id: string; full_name: string }[];
+   *  (uso desde el panel de assistant, que no es terapeuta y asigna en nombre de otro).
+   *  Si además trae clinic_id, se filtra según la clínica seleccionada (uso desde org_admin). */
+  assignableTherapists?: { id: string; full_name: string; clinic_id?: string }[];
+  /** Si se da, se muestra un selector de clínica en vez de usar clinicId fijo
+   *  (uso desde el panel de org_admin, que gestiona varias clínicas). */
+  assignableClinics?: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -62,6 +68,15 @@ export function CreatePatientForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTherapistId, setSelectedTherapistId] = useState(therapistId ?? "");
+  const [selectedClinicId, setSelectedClinicId] = useState(
+    clinicId ?? assignableClinics?.[0]?.id ?? "",
+  );
+
+  const therapistOptions = assignableClinics
+    ? (assignableTherapists ?? []).filter(
+        (t) => !t.clinic_id || t.clinic_id === selectedClinicId,
+      )
+    : (assignableTherapists ?? []);
 
   const [fullName, setFullName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -117,7 +132,7 @@ export function CreatePatientForm({
 
     const { error: insertError } = await supabase.from("patients").insert({
       organization_id: organizationId,
-      clinic_id: clinicId,
+      clinic_id: selectedClinicId,
       primary_therapist_id: selectedTherapistId || null,
       created_by: createdBy ?? therapistId ?? null,
       full_name: fullName,
@@ -221,6 +236,25 @@ export function CreatePatientForm({
             placeholder="CURP / DNI / etc."
           />
         </Field>
+        {assignableClinics && (
+          <Field label="Sucursal">
+            <select
+              required
+              value={selectedClinicId}
+              onChange={(e) => {
+                setSelectedClinicId(e.target.value);
+                setSelectedTherapistId("");
+              }}
+              className={inputClass}
+            >
+              {assignableClinics.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
         {assignableTherapists && (
           <Field label="Terapeuta asignado (opcional)">
             <select
@@ -229,7 +263,7 @@ export function CreatePatientForm({
               className={inputClass}
             >
               <option value="">Sin asignar</option>
-              {assignableTherapists.map((t) => (
+              {therapistOptions.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.full_name}
                 </option>
