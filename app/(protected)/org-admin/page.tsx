@@ -1,15 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { InviteUserForm } from "@/components/InviteUserForm";
 import { CreateClinicForm } from "@/components/CreateClinicForm";
+import { ROLE_LABELS } from "@/lib/roles";
 import type { Clinic, Profile } from "@/lib/types";
-
-const ROLE_LABELS: Record<string, string> = {
-  org_admin: "Administrador",
-  therapist: "Terapeuta",
-  assistant: "Asistente",
-  supervisor: "Supervisor",
-};
 
 export default async function OrgAdminPage() {
   const supabase = createClient();
@@ -54,11 +49,16 @@ export default async function OrgAdminPage() {
         {clinics && clinics.length > 0 ? (
           <ul className="flex flex-wrap gap-3">
             {clinics.map((c) => (
-              <li
-                key={c.id}
-                className="rounded-full border border-line bg-white/60 px-4 py-1.5 text-sm text-ink/80"
-              >
-                {c.name}
+              <li key={c.id}>
+                <Link
+                  href={`/org-admin/clinics/${c.id}`}
+                  className={`rounded-full border border-line bg-white/60 px-4 py-1.5 text-sm transition hover:border-deep/40 ${
+                    c.active ? "text-ink/80" : "text-ink/40"
+                  }`}
+                >
+                  {c.name}
+                  {!c.active && " (inactiva)"}
+                </Link>
               </li>
             ))}
           </ul>
@@ -90,7 +90,11 @@ export default async function OrgAdminPage() {
             <tbody>
               {(team ?? []).map((member) => (
                 <tr key={member.id} className="border-b border-line last:border-0">
-                  <td className="px-5 py-3.5 font-medium text-ink">{member.full_name}</td>
+                  <td className="px-5 py-3.5 font-medium text-ink">
+                    <Link href={`/org-admin/team/${member.id}`} className="hover:underline">
+                      {member.full_name}
+                    </Link>
+                  </td>
                   <td className="px-5 py-3.5 text-ink/70">{member.email}</td>
                   <td className="px-5 py-3.5 text-ink/70">{ROLE_LABELS[member.role] ?? member.role}</td>
                   <td className="px-5 py-3.5 text-ink/70">

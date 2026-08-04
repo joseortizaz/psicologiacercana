@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Organization } from "@/lib/types";
 
@@ -65,7 +66,14 @@ export function OrganizationsTable({ initialOrganizations }: { initialOrganizati
         <tbody>
           {organizations.map((org) => (
             <tr key={org.id} className="border-b border-line last:border-0">
-              <td className="px-5 py-3.5 font-medium text-ink">{org.name}</td>
+              <td className="px-5 py-3.5 font-medium text-ink">
+                <Link
+                  href={`/super-admin/organizations/${org.id}`}
+                  className="hover:underline"
+                >
+                  {org.name}
+                </Link>
+              </td>
               <td className="px-5 py-3.5 capitalize text-ink/70">{org.plan}</td>
               <td className="px-5 py-3.5">
                 <span

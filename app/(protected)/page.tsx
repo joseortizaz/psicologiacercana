@@ -38,8 +38,8 @@ export default async function HomePage() {
     <div className="rounded-lg border border-line bg-white/60 p-8">
       <p className="font-display text-xl text-deep">Bienvenido a PsyClinic Cloud</p>
       <p className="mt-2 text-sm text-ink/60">
-        El panel para tu rol todavía está en construcción. Por ahora, esta plataforma
-        cuenta con paneles para Super Administrador y Administrador de Clínica.
+        No pudimos determinar tu rol en la plataforma. Si crees que esto es un error,
+        contacta al administrador de tu organización.
       </p>
     </div>
   );
