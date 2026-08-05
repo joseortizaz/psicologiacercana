@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PsyClinic Cloud",
+  title: "Cercana",
   description: "Gestión clínica y administrativa para consultorios de psicología",
 };
 

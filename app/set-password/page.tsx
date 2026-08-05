@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { SetPasswordForm } from "@/components/SetPasswordForm";
 
 export default function SetPasswordPage() {
@@ -5,7 +6,14 @@ export default function SetPasswordPage() {
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <p className="font-display text-2xl font-medium text-deep">PsyClinic Cloud</p>
+          <Image
+            src="/brand/logo-cercana-full.png"
+            alt="Cercana"
+            width={855}
+            height={410}
+            priority
+            className="mx-auto h-12 w-auto"
+          />
           <p className="mt-1.5 text-sm text-ink/60">Elige una contraseña para tu cuenta</p>
         </div>
 

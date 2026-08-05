@@ -1,4 +1,4 @@
-# PsyClinic Cloud — Frontend (Fase 1: login + paneles)
+# Cercana — Frontend (Fase 1: login + paneles)
 
 Next.js 14 (App Router) + TypeScript + Tailwind + `@supabase/ssr`.
 
