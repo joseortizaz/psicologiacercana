@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { LogoutButton } from "@/components/LogoutButton";
 
@@ -23,8 +24,15 @@ export function AppShell({
       <header className="border-b border-line bg-white/60">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div>
-            <p className="font-display text-lg font-medium text-deep">PsyClinic Cloud</p>
-            <p className="text-xs text-ink/50">{ROLE_LABELS[role] ?? role}</p>
+            <Image
+              src="/brand/logo-cercana-compact.png"
+              alt="Cercana"
+              width={855}
+              height={410}
+              priority
+              className="h-8 w-auto"
+            />
+            <p className="mt-1 text-xs text-ink/50">{ROLE_LABELS[role] ?? role}</p>
           </div>
           <div className="flex items-center gap-4">
             <Link

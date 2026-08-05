@@ -36,7 +36,7 @@ export default async function HomePage() {
 
   return (
     <div className="rounded-lg border border-line bg-white/60 p-8">
-      <p className="font-display text-xl text-deep">Bienvenido a PsyClinic Cloud</p>
+      <p className="font-display text-xl text-deep">Bienvenido a Cercana</p>
       <p className="mt-2 text-sm text-ink/60">
         No pudimos determinar tu rol en la plataforma. Si crees que esto es un error,
         contacta al administrador de tu organización.
