@@ -30,6 +30,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isPublicRoute =
+    request.nextUrl.pathname === "/" ||
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/auth/");
 
@@ -38,8 +39,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && request.nextUrl.pathname === "/login") {
-    const homeUrl = new URL("/", request.url);
+  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/")) {
+    const homeUrl = new URL("/dashboard", request.url);
     return NextResponse.redirect(homeUrl);
   }
 

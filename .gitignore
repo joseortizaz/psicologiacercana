@@ -1,2 +1,4 @@
 node_modules
 public/brand/.discard/
+.discard/
+.next/
