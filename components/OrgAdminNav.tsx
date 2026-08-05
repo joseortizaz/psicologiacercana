@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/org-admin", label: "Inicio" },
   { href: "/org-admin/patients", label: "Pacientes" },
   { href: "/org-admin/appointments", label: "Citas" },
+  { href: "/org-admin/audit", label: "Auditoría" },
 ];
 
 export function OrgAdminNav() {
