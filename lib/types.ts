@@ -116,6 +116,22 @@ export interface Appointment {
   updated_at: string;
 }
 
+export interface ClinicalHistorySections {
+  personal_history?: string;
+  family_history?: string;
+  medical_history?: string;
+  psychiatric_history?: string;
+  social_history?: string;
+  mental_status_exam?: string;
+}
+
+export interface ClinicalSensitiveHistory {
+  substance_use?: string;
+  trauma_history?: string;
+  risk_history?: string;
+  legal_history?: string;
+}
+
 export interface ClinicalRecord {
   id: string;
   organization_id: string;
@@ -130,6 +146,8 @@ export interface ClinicalRecord {
   treatment_plan: string | null;
   medications: string[];
   allergies: string[];
+  history_sections: ClinicalHistorySections;
+  sensitive_history: ClinicalSensitiveHistory;
   discharge_date: string | null;
   discharge_summary: string | null;
   created_by: string | null;

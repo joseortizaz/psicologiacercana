@@ -64,7 +64,7 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
     supabase
       .from("clinical_records")
       .select(
-        "id, organization_id, clinic_id, patient_id, primary_therapist_id, status, chief_complaint, diagnosis, diagnosis_hypothesis, therapeutic_objectives, treatment_plan, created_at, updated_at",
+        "id, organization_id, clinic_id, patient_id, primary_therapist_id, status, chief_complaint, diagnosis, diagnosis_hypothesis, therapeutic_objectives, treatment_plan, medications, allergies, history_sections, sensitive_history, discharge_date, discharge_summary, created_at, updated_at",
       )
       .eq("patient_id", patient.id)
       .eq("primary_therapist_id", user!.id)

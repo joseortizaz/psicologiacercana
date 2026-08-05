@@ -1,7 +1,30 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Appointment, ClinicalRecord, Consultation, Patient } from "@/lib/types";
+import type {
+  Appointment,
+  ClinicalHistorySections,
+  ClinicalRecord,
+  ClinicalSensitiveHistory,
+  Consultation,
+  Patient,
+} from "@/lib/types";
+
+const HISTORY_SECTION_FIELDS: { key: keyof ClinicalHistorySections; label: string }[] = [
+  { key: "personal_history", label: "Historia personal" },
+  { key: "family_history", label: "Antecedentes familiares" },
+  { key: "medical_history", label: "Antecedentes médicos" },
+  { key: "psychiatric_history", label: "Antecedentes psicológicos/psiquiátricos" },
+  { key: "social_history", label: "Historia social" },
+  { key: "mental_status_exam", label: "Examen del estado mental" },
+];
+
+const SENSITIVE_SECTION_FIELDS: { key: keyof ClinicalSensitiveHistory; label: string }[] = [
+  { key: "substance_use", label: "Consumo de sustancias" },
+  { key: "trauma_history", label: "Historia de trauma o abuso" },
+  { key: "risk_history", label: "Riesgo (ideación/intento suicida, autolesión)" },
+  { key: "legal_history", label: "Historia legal" },
+];
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: "Agendada",
@@ -68,7 +91,7 @@ export default async function SupervisorPatientDetailPage({
     supabase
       .from("clinical_records")
       .select(
-        "id, organization_id, clinic_id, patient_id, primary_therapist_id, status, chief_complaint, diagnosis, diagnosis_hypothesis, therapeutic_objectives, treatment_plan, created_at, updated_at",
+        "id, organization_id, clinic_id, patient_id, primary_therapist_id, status, chief_complaint, diagnosis, diagnosis_hypothesis, therapeutic_objectives, treatment_plan, medications, allergies, history_sections, sensitive_history, discharge_date, discharge_summary, created_at, updated_at",
       )
       .eq("patient_id", patient.id)
       .maybeSingle<ClinicalRecord>(),
@@ -170,45 +193,129 @@ export default async function SupervisorPatientDetailPage({
         <p className="-mt-2 text-sm text-ink/50">Vista de solo lectura.</p>
 
         {clinicalRecord ? (
-          <div className="rounded-lg border border-line bg-white/60 p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-wide text-ink/40">
-                {CASE_STATUS_LABELS[clinicalRecord.status] ?? clinicalRecord.status}
-              </p>
+          <>
+            {clinicalRecord.status === "discharged" && (
+              <div className="rounded-lg border border-sage/40 bg-sage/10 p-6">
+                <p className="font-display text-lg text-deep">
+                  Alta
+                  {clinicalRecord.discharge_date &&
+                    ` · ${new Date(`${clinicalRecord.discharge_date}T00:00:00`).toLocaleDateString("es-MX", { dateStyle: "long" })}`}
+                </p>
+                {clinicalRecord.discharge_summary && (
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-ink/80">
+                    {clinicalRecord.discharge_summary}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="rounded-lg border border-line bg-white/60 p-6">
+              <div className="flex items-center justify-between">
+                <p className="text-xs uppercase tracking-wide text-ink/40">
+                  {CASE_STATUS_LABELS[clinicalRecord.status] ?? clinicalRecord.status}
+                </p>
+              </div>
+              <div className="mt-3 flex flex-col gap-2 text-sm text-ink/80">
+                {clinicalRecord.chief_complaint && (
+                  <p>
+                    <span className="font-medium">Motivo de consulta: </span>
+                    {clinicalRecord.chief_complaint}
+                  </p>
+                )}
+                {clinicalRecord.diagnosis_hypothesis && (
+                  <p>
+                    <span className="font-medium">Hipótesis diagnóstica: </span>
+                    {clinicalRecord.diagnosis_hypothesis}
+                  </p>
+                )}
+                {clinicalRecord.diagnosis && (
+                  <p>
+                    <span className="font-medium">Diagnóstico: </span>
+                    {clinicalRecord.diagnosis}
+                  </p>
+                )}
+                {clinicalRecord.therapeutic_objectives && (
+                  <p>
+                    <span className="font-medium">Objetivos terapéuticos: </span>
+                    {clinicalRecord.therapeutic_objectives}
+                  </p>
+                )}
+                {clinicalRecord.treatment_plan && (
+                  <p>
+                    <span className="font-medium">Plan de tratamiento: </span>
+                    {clinicalRecord.treatment_plan}
+                  </p>
+                )}
+              </div>
+
+              {(clinicalRecord.medications?.length > 0 || clinicalRecord.allergies?.length > 0) && (
+                <div className="mt-4 grid gap-4 border-t border-line pt-4 sm:grid-cols-2">
+                  {clinicalRecord.medications?.length > 0 && (
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-ink/40">Medicamentos</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {clinicalRecord.medications.map((m) => (
+                          <span
+                            key={m}
+                            className="rounded-full bg-ink/5 px-2.5 py-1 text-xs text-ink/70"
+                          >
+                            {m}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {clinicalRecord.allergies?.length > 0 && (
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-ink/40">Alergias</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {clinicalRecord.allergies.map((a) => (
+                          <span
+                            key={a}
+                            className="rounded-full bg-clay/10 px-2.5 py-1 text-xs text-clay"
+                          >
+                            {a}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="mt-3 flex flex-col gap-2 text-sm text-ink/80">
-              {clinicalRecord.chief_complaint && (
-                <p>
-                  <span className="font-medium">Motivo de consulta: </span>
-                  {clinicalRecord.chief_complaint}
-                </p>
-              )}
-              {clinicalRecord.diagnosis_hypothesis && (
-                <p>
-                  <span className="font-medium">Hipótesis diagnóstica: </span>
-                  {clinicalRecord.diagnosis_hypothesis}
-                </p>
-              )}
-              {clinicalRecord.diagnosis && (
-                <p>
-                  <span className="font-medium">Diagnóstico: </span>
-                  {clinicalRecord.diagnosis}
-                </p>
-              )}
-              {clinicalRecord.therapeutic_objectives && (
-                <p>
-                  <span className="font-medium">Objetivos terapéuticos: </span>
-                  {clinicalRecord.therapeutic_objectives}
-                </p>
-              )}
-              {clinicalRecord.treatment_plan && (
-                <p>
-                  <span className="font-medium">Plan de tratamiento: </span>
-                  {clinicalRecord.treatment_plan}
-                </p>
-              )}
-            </div>
-          </div>
+
+            {HISTORY_SECTION_FIELDS.some((f) => clinicalRecord.history_sections?.[f.key]) && (
+              <div className="rounded-lg border border-line bg-white/60 p-6">
+                <p className="font-display text-base text-deep">Historia clínica estructurada</p>
+                <div className="mt-3 flex flex-col gap-3 text-sm text-ink/70">
+                  {HISTORY_SECTION_FIELDS.filter((f) => clinicalRecord.history_sections?.[f.key]).map(
+                    (f) => (
+                      <p key={f.key}>
+                        <span className="font-medium text-ink/80">{f.label}: </span>
+                        {clinicalRecord.history_sections[f.key]}
+                      </p>
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
+
+            {SENSITIVE_SECTION_FIELDS.some((f) => clinicalRecord.sensitive_history?.[f.key]) && (
+              <div className="rounded-lg border border-clay/30 bg-clay/5 p-6">
+                <p className="font-display text-base text-deep">Información sensible</p>
+                <div className="mt-3 flex flex-col gap-3 text-sm text-ink/70">
+                  {SENSITIVE_SECTION_FIELDS.filter(
+                    (f) => clinicalRecord.sensitive_history?.[f.key],
+                  ).map((f) => (
+                    <p key={f.key}>
+                      <span className="font-medium text-ink/80">{f.label}: </span>
+                      {clinicalRecord.sensitive_history[f.key]}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <p className="text-sm text-ink/50">Este paciente todavía no tiene expediente clínico.</p>
         )}
