@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { OrganizationsTable } from "@/components/OrganizationsTable";
@@ -36,7 +37,15 @@ export default async function SuperAdminPage() {
             {organizations?.length ?? 0} clínica(s) en la plataforma
           </p>
         </div>
-        <OnboardOrganizationForm />
+        <div className="flex items-center gap-4">
+          <Link
+            href="/super-admin/audit"
+            className="text-sm font-medium text-deep underline decoration-deep/30 underline-offset-2"
+          >
+            Ver auditoría
+          </Link>
+          <OnboardOrganizationForm />
+        </div>
       </div>
 
       <OrganizationsTable initialOrganizations={organizations ?? []} />
