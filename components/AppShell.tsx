@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LogoutButton } from "@/components/LogoutButton";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -26,7 +27,12 @@ export function AppShell({
             <p className="text-xs text-ink/50">{ROLE_LABELS[role] ?? role}</p>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-ink/70">{fullName}</span>
+            <Link
+              href="/account"
+              className="text-sm text-ink/70 underline decoration-ink/20 underline-offset-2 transition hover:text-ink"
+            >
+              {fullName}
+            </Link>
             <LogoutButton />
           </div>
         </div>
