@@ -138,13 +138,19 @@ select throws_ok(
 );
 
 -- ---------------------------------------------------------------
--- Caso 7: org_admin no puede modificar un plan existente.
+-- Caso 7: org_admin no puede modificar un plan existente. A diferencia de
+-- INSERT (con check, lanza 42501), la policy de UPDATE solo tiene USING
+-- -- RLS filtra la fila en silencio, así que el UPDATE "tiene éxito" pero
+-- afecta 0 filas (mismo patrón que el Caso 3 de
+-- 001-multi-tenant-isolation.sql).
 -- ---------------------------------------------------------------
-select throws_ok(
-  $$ update public.plans set monthly_price = 1 where code = 'esencial' $$,
-  '42501',
-  null,
-  'Caso 7: org_admin no puede actualizar filas de la tabla plans'
+update public.plans set monthly_price = 1 where code = 'esencial';
+
+select tests.authenticate_as_service_role();
+select is(
+  (select monthly_price from public.plans where code = 'esencial'),
+  990.00,
+  'Caso 7: el UPDATE de org_admin sobre plans no tuvo efecto (RLS lo filtró en silencio)'
 );
 
 -- ---------------------------------------------------------------
