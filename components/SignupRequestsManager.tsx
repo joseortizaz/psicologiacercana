@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { extractFunctionErrorMessage } from "@/lib/functionError";
 import type { SignupRequest, SignupRequestStatus } from "@/lib/types";
 
 const STATUS_LABELS: Record<SignupRequestStatus, string> = {
@@ -55,7 +56,7 @@ function SignupRequestCard({
     );
     setLoadingDocs(false);
     if (fnError || data?.error) {
-      setError(data?.error ?? fnError?.message ?? "No se pudieron obtener los documentos.");
+      setError(data?.error ?? (await extractFunctionErrorMessage(fnError)));
       return;
     }
     setDocs(data as DocumentUrls);
@@ -72,7 +73,7 @@ function SignupRequestCard({
     });
     setBusy(false);
     if (fnError || data?.error) {
-      setError(data?.error ?? fnError?.message ?? "No se pudo aprobar la solicitud.");
+      setError(data?.error ?? (await extractFunctionErrorMessage(fnError)));
       return;
     }
     onChanged();
@@ -87,7 +88,7 @@ function SignupRequestCard({
     });
     setBusy(false);
     if (fnError || data?.error) {
-      setError(data?.error ?? fnError?.message ?? "No se pudo rechazar la solicitud.");
+      setError(data?.error ?? (await extractFunctionErrorMessage(fnError)));
       return;
     }
     onChanged();

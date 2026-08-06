@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { DocumentUploadField } from "@/components/DocumentUploadField";
+import { extractFunctionErrorMessage } from "@/lib/functionError";
 
 type UploadSlot = { path: string; token: string; signedUrl: string };
 
@@ -52,7 +53,7 @@ export function SignupRequestForm() {
 
     if (slotsError || slotsData?.error) {
       setStep("idle");
-      setError(slotsData?.error ?? slotsError?.message ?? "No se pudo iniciar el registro.");
+      setError(slotsData?.error ?? (await extractFunctionErrorMessage(slotsError)));
       return;
     }
 
@@ -97,7 +98,7 @@ export function SignupRequestForm() {
     setStep("idle");
 
     if (submitError || submitData?.error) {
-      setError(submitData?.error ?? submitError?.message ?? "No se pudo enviar la solicitud.");
+      setError(submitData?.error ?? (await extractFunctionErrorMessage(submitError)));
       return;
     }
 
