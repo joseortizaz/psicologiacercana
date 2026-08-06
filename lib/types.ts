@@ -17,15 +17,35 @@ export interface Profile {
   updated_at: string;
 }
 
-export type OrganizationPlan = "trial" | "basic" | "professional" | "enterprise";
 export type OrganizationStatus = "active" | "suspended" | "cancelled";
+
+export interface Plan {
+  id: string;
+  code: string;
+  name: string;
+  tagline: string | null;
+  monthly_price: number | null;
+  annual_price: number | null;
+  currency: string;
+  is_custom: boolean;
+  max_therapists: number | null;
+  max_org_admins: number | null;
+  max_assistants: number | null;
+  max_supervisors: number | null;
+  features: string[];
+  display_order: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Organization {
   id: string;
   name: string;
   legal_name: string | null;
   tax_id: string | null;
-  plan: OrganizationPlan;
+  plan_id: string;
+  plan?: Pick<Plan, "id" | "name" | "code"> | null;
   status: OrganizationStatus;
   billing_email: string | null;
   country: string;

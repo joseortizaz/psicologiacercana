@@ -26,7 +26,14 @@ select tests.create_supabase_user('assistant_a', 'assistant_a@test.com');
 select tests.create_supabase_user('therapist_b1', 'therapist_b1@test.com');
 
 with org_a as (
-  insert into public.organizations (name) values ('Org A - Test') returning id
+  -- Org A termina con 2 terapeutas + 1 asistente + 1 org_admin, por encima
+  -- de los límites del plan por defecto (Esencial); se le asigna el plan
+  -- Institucional (sin límites) para no acoplar este test de aislamiento
+  -- multi-tenant a los límites de planes (ver enforce_plan_limits en
+  -- 20260805000000_subscription_plans.sql).
+  insert into public.organizations (name, plan_id)
+  select 'Org A - Test', id from public.plans where code = 'institucional'
+  returning id
 ), org_b as (
   insert into public.organizations (name) values ('Org B - Test') returning id
 ), clinic_a as (

@@ -74,7 +74,7 @@ export function OrganizationsTable({ initialOrganizations }: { initialOrganizati
                   {org.name}
                 </Link>
               </td>
-              <td className="px-5 py-3.5 capitalize text-ink/70">{org.plan}</td>
+              <td className="px-5 py-3.5 text-ink/70">{org.plan?.name ?? "—"}</td>
               <td className="px-5 py-3.5">
                 <span
                   className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[org.status]}`}

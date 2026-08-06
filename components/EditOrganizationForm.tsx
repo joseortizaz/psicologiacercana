@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import type { Organization, OrganizationPlan, OrganizationStatus } from "@/lib/types";
+import type { Organization, OrganizationStatus, Plan } from "@/lib/types";
 
-const PLAN_OPTIONS: { value: OrganizationPlan; label: string }[] = [
-  { value: "trial", label: "Prueba" },
-  { value: "basic", label: "Básico" },
-  { value: "professional", label: "Profesional" },
-  { value: "enterprise", label: "Empresarial" },
-];
+type PlanOption = Pick<
+  Plan,
+  "id" | "name" | "tagline" | "max_therapists" | "max_org_admins" | "max_assistants" | "max_supervisors"
+>;
+
+function formatLimit(n: number | null) {
+  return n === null ? "sin límite" : String(n);
+}
 
 const STATUS_OPTIONS: { value: OrganizationStatus; label: string }[] = [
   { value: "active", label: "Activa" },
@@ -30,14 +33,20 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export function EditOrganizationForm({ organization }: { organization: Organization }) {
+export function EditOrganizationForm({
+  organization,
+  plans,
+}: {
+  organization: Organization;
+  plans: PlanOption[];
+}) {
   const router = useRouter();
   const supabase = createClient();
 
   const [name, setName] = useState(organization.name);
   const [legalName, setLegalName] = useState(organization.legal_name ?? "");
   const [taxId, setTaxId] = useState(organization.tax_id ?? "");
-  const [plan, setPlan] = useState<OrganizationPlan>(organization.plan);
+  const [planId, setPlanId] = useState(organization.plan_id);
   const [status, setStatus] = useState<OrganizationStatus>(organization.status);
   const [billingEmail, setBillingEmail] = useState(organization.billing_email ?? "");
   const [country, setCountry] = useState(organization.country);
@@ -51,6 +60,8 @@ export function EditOrganizationForm({ organization }: { organization: Organizat
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
+  const selectedPlan = plans.find((p) => p.id === planId) ?? null;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -63,7 +74,7 @@ export function EditOrganizationForm({ organization }: { organization: Organizat
         name,
         legal_name: legalName || null,
         tax_id: taxId || null,
-        plan,
+        plan_id: planId,
         status,
         billing_email: billingEmail || null,
         country,
@@ -118,13 +129,13 @@ export function EditOrganizationForm({ organization }: { organization: Organizat
         </Field>
         <Field label="Plan">
           <select
-            value={plan}
-            onChange={(e) => setPlan(e.target.value as OrganizationPlan)}
+            value={planId}
+            onChange={(e) => setPlanId(e.target.value)}
             className={inputClass}
           >
-            {PLAN_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
+            {plans.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
               </option>
             ))}
           </select>
@@ -177,6 +188,27 @@ export function EditOrganizationForm({ organization }: { organization: Organizat
           />
         </Field>
       </div>
+
+      {selectedPlan && (
+        <div className="rounded-md border border-line bg-paper/60 px-4 py-3 text-sm text-ink/70">
+          <p className="font-medium text-ink">
+            {selectedPlan.name}
+            {selectedPlan.tagline ? ` — ${selectedPlan.tagline}` : ""}
+          </p>
+          <p className="mt-1 text-ink/60">
+            Límites: {formatLimit(selectedPlan.max_therapists)} terapeuta(s),{" "}
+            {formatLimit(selectedPlan.max_org_admins)} administrador(es),{" "}
+            {formatLimit(selectedPlan.max_assistants)} asistente(s),{" "}
+            {formatLimit(selectedPlan.max_supervisors)} supervisor(es)
+          </p>
+          <Link
+            href="/super-admin/plans"
+            className="mt-1.5 inline-block text-xs font-medium text-deep underline decoration-deep/30 underline-offset-2"
+          >
+            Editar planes
+          </Link>
+        </div>
+      )}
 
       {error && (
         <p role="alert" className="text-sm text-clay">
