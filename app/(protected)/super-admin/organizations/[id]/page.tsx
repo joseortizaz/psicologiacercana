@@ -24,7 +24,7 @@ export default async function EditOrganizationPage({ params }: { params: { id: s
   const { data: organization } = await supabase
     .from("organizations")
     .select(
-      "id, name, legal_name, tax_id, plan, status, billing_email, country, timezone, trial_ends_at, max_clinics, created_at, updated_at",
+      "id, name, legal_name, tax_id, plan_id, status, billing_email, country, timezone, trial_ends_at, max_clinics, created_at, updated_at",
     )
     .eq("id", params.id)
     .single<Organization>();
@@ -32,6 +32,12 @@ export default async function EditOrganizationPage({ params }: { params: { id: s
   if (!organization) {
     notFound();
   }
+
+  const { data: plans } = await supabase
+    .from("plans")
+    .select("id, name, tagline, max_therapists, max_org_admins, max_assistants, max_supervisors")
+    .eq("active", true)
+    .order("display_order", { ascending: true });
 
   return (
     <div className="flex flex-col gap-6">
@@ -48,7 +54,7 @@ export default async function EditOrganizationPage({ params }: { params: { id: s
         </p>
       </div>
 
-      <EditOrganizationForm organization={organization} />
+      <EditOrganizationForm organization={organization} plans={plans ?? []} />
     </div>
   );
 }

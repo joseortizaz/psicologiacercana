@@ -9,7 +9,11 @@ select plan(4);
 
 select tests.authenticate_as_service_role();
 
-insert into public.organizations (name) values ('Org Overlap - Test');
+-- 2 terapeutas en la misma org: se le asigna el plan Institucional (sin
+-- límites) para no acoplar este test a los límites de planes (ver
+-- enforce_plan_limits en 20260805000000_subscription_plans.sql).
+insert into public.organizations (name, plan_id)
+select 'Org Overlap - Test', id from public.plans where code = 'institucional';
 select id as org_id from public.organizations where name = 'Org Overlap - Test' \gset
 
 insert into public.clinics (organization_id, name) values (:'org_id', 'Clínica Overlap');

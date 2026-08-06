@@ -24,7 +24,7 @@ export default async function SuperAdminPage() {
 
   const { data: organizations } = await supabase
     .from("organizations")
-    .select("id, name, plan, status, billing_email, created_at")
+    .select("id, name, plan_id, plan:plans(id, name, code), status, billing_email, created_at")
     .order("created_at", { ascending: false })
     .returns<Organization[]>();
 
@@ -38,6 +38,12 @@ export default async function SuperAdminPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
+          <Link
+            href="/super-admin/plans"
+            className="text-sm font-medium text-deep underline decoration-deep/30 underline-offset-2"
+          >
+            Gestionar planes
+          </Link>
           <Link
             href="/super-admin/audit"
             className="text-sm font-medium text-deep underline decoration-deep/30 underline-offset-2"
