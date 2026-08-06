@@ -28,6 +28,11 @@ export default async function SuperAdminPage() {
     .order("created_at", { ascending: false })
     .returns<Organization[]>();
 
+  const { count: pendingSignupCount } = await supabase
+    .from("signup_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
@@ -38,6 +43,17 @@ export default async function SuperAdminPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
+          <Link
+            href="/super-admin/signup-requests"
+            className="flex items-center gap-1.5 text-sm font-medium text-deep underline decoration-deep/30 underline-offset-2"
+          >
+            Solicitudes de registro
+            {!!pendingSignupCount && (
+              <span className="rounded-full bg-clay/15 px-2 py-0.5 text-xs font-semibold text-clay no-underline">
+                {pendingSignupCount}
+              </span>
+            )}
+          </Link>
           <Link
             href="/super-admin/plans"
             className="text-sm font-medium text-deep underline decoration-deep/30 underline-offset-2"

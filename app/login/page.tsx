@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { LoginForm } from "@/components/LoginForm";
 
 export default function LoginPage() {
@@ -22,7 +23,11 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-ink/40">
-          ¿No tienes cuenta? Contacta al administrador de tu clínica para que te invite.
+          ¿No tienes cuenta?{" "}
+          <Link href="/registro" className="underline decoration-ink/20 underline-offset-2">
+            Regístrate para tu prueba gratuita
+          </Link>{" "}
+          o contacta al administrador de tu clínica para que te invite.
         </p>
       </div>
     </main>

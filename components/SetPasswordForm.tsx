@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export function SetPasswordForm() {
   const router = useRouter();
@@ -44,37 +45,21 @@ export function SetPasswordForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="text-sm font-medium text-ink/80">
-          Nueva contraseña
-        </label>
-        <input
-          id="password"
-          type="password"
-          required
-          autoComplete="new-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="rounded-md border border-line bg-white px-3.5 py-2.5 text-ink outline-none transition focus:border-deep"
-          placeholder="••••••••"
-        />
-      </div>
+      <PasswordInput
+        id="password"
+        label="Nueva contraseña"
+        autoComplete="new-password"
+        value={password}
+        onChange={setPassword}
+      />
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="confirmPassword" className="text-sm font-medium text-ink/80">
-          Confirmar contraseña
-        </label>
-        <input
-          id="confirmPassword"
-          type="password"
-          required
-          autoComplete="new-password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          className="rounded-md border border-line bg-white px-3.5 py-2.5 text-ink outline-none transition focus:border-deep"
-          placeholder="••••••••"
-        />
-      </div>
+      <PasswordInput
+        id="confirmPassword"
+        label="Confirmar contraseña"
+        autoComplete="new-password"
+        value={confirmPassword}
+        onChange={setConfirmPassword}
+      />
 
       {error && (
         <p role="alert" className="text-sm text-clay">

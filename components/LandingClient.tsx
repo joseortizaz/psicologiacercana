@@ -21,7 +21,7 @@ const LANDING_HTML = `
 
     <div class="nav-actions">
       <a href="/login" class="login-link">Iniciar sesión</a>
-      <a href="#planes" class="btn btn-primary btn-sm">Prueba gratuita 14 días</a>
+      <a href="/registro" class="btn btn-primary btn-sm">Prueba gratuita 14 días</a>
       <button class="menu-toggle" onclick="window.__cercanaToggleNav()" aria-label="Abrir menú">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#173A3F" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
@@ -36,7 +36,7 @@ const LANDING_HTML = `
     <a href="#contacto">Contacto</a>
     <div class="mobile-cta">
       <a href="/login" class="btn btn-outline btn-block">Iniciar sesión</a>
-      <a href="#planes" class="btn btn-primary btn-block">Prueba gratuita 14 días</a>
+      <a href="/registro" class="btn btn-primary btn-block">Prueba gratuita 14 días</a>
     </div>
   </div>
 </header>
@@ -392,7 +392,7 @@ const LANDING_HTML = `
         <h2>Cuidar de quienes cuidan</h2>
         <p>Cercana existe para que tú puedas enfocarte en lo más importante: el bienestar de tus pacientes. Nosotros nos encargamos de la parte administrativa, legal y tecnológica.</p>
         <div class="purpose-ctas">
-          <a href="#planes" class="btn btn-primary">Prueba gratuita 14 días</a>
+          <a href="/registro" class="btn btn-primary">Prueba gratuita 14 días</a>
           <a href="#contacto" class="link-arrow">Solicita una demostración
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </a>

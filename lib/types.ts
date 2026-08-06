@@ -71,6 +71,29 @@ export interface Clinic {
   updated_at: string;
 }
 
+export type SignupRequestStatus = "pending" | "approved" | "rejected";
+
+export interface SignupRequest {
+  id: string;
+  status: SignupRequestStatus;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  license_number: string | null;
+  specialty: string | null;
+  clinic_name: string;
+  id_document_path: string;
+  credential_document_path: string;
+  license_document_path: string;
+  rejection_reason: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_organization_id: string | null;
+  created_user_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type PatientCategory = "child" | "adolescent" | "adult";
 
 export interface Patient {
