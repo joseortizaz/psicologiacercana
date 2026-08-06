@@ -132,13 +132,7 @@ const LANDING_HTML = `
   <div class="wrap ribbon-row">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="#B3532E" stroke="none"><path d="M12 21s-7.5-4.6-10-9.3C.4 8 2.3 4 6.4 4c2 0 3.7 1.1 4.6 2.7C11.9 5.1 13.6 4 15.6 4c4.1 0 6 4 4.4 7.7C19.5 16.4 12 21 12 21z"/></svg>
     Creado para profesionales de la salud mental en República Dominicana
-    <svg width="20" height="14" viewBox="0 0 20 14" style="border-radius:2px;overflow:hidden;flex:none;">
-      <rect width="20" height="14" fill="#fff"/>
-      <rect width="20" height="6" fill="#002D62"/>
-      <rect y="8" width="20" height="6" fill="#CE1126"/>
-      <rect x="8.4" width="3.2" height="6" fill="#002D62"/>
-      <rect x="8.4" y="8" width="3.2" height="6" fill="#CE1126"/>
-    </svg>
+    <img src="/brand/flag-dominicana.webp" alt="Bandera de República Dominicana" width="16" height="16" style="flex:none;object-fit:contain;" />
   </div>
 </div>
 
@@ -451,13 +445,7 @@ const LANDING_HTML = `
           <a href="#" aria-label="LinkedIn"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6.94 8.5H3.56V21h3.38V8.5zM5.25 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM21 21v-7.1c0-3.4-1.8-5-4.3-5-2 0-2.9 1.1-3.4 1.9V8.5H10v12.5h3.4v-7c0-.4 0-.7.1-1 .3-.7 1-1.5 2.1-1.5 1.5 0 2.1 1.1 2.1 2.8v6.7H21z"/></svg></a>
         </div>
         <div class="made-in">
-          <svg width="18" height="13" viewBox="0 0 20 14" style="border-radius:2px;flex:none;">
-            <rect width="20" height="14" fill="#fff"/>
-            <rect width="20" height="6" fill="#002D62"/>
-            <rect y="8" width="20" height="6" fill="#CE1126"/>
-            <rect x="8.4" width="3.2" height="6" fill="#002D62"/>
-            <rect x="8.4" y="8" width="3.2" height="6" fill="#CE1126"/>
-          </svg>
+          <img src="/brand/flag-dominicana.webp" alt="Bandera de República Dominicana" width="16" height="16" style="flex:none;object-fit:contain;" />
           Hecho en República Dominicana
         </div>
       </div>
