@@ -132,13 +132,7 @@ const LANDING_HTML = `
   <div class="wrap ribbon-row">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="#B3532E" stroke="none"><path d="M12 21s-7.5-4.6-10-9.3C.4 8 2.3 4 6.4 4c2 0 3.7 1.1 4.6 2.7C11.9 5.1 13.6 4 15.6 4c4.1 0 6 4 4.4 7.7C19.5 16.4 12 21 12 21z"/></svg>
     Creado para profesionales de la salud mental en República Dominicana
-    <svg width="20" height="14" viewBox="0 0 20 14" style="border-radius:2px;overflow:hidden;flex:none;">
-      <rect width="20" height="14" fill="#fff"/>
-      <rect width="20" height="6" fill="#002D62"/>
-      <rect y="8" width="20" height="6" fill="#CE1126"/>
-      <rect x="8.4" width="3.2" height="6" fill="#002D62"/>
-      <rect x="8.4" y="8" width="3.2" height="6" fill="#CE1126"/>
-    </svg>
+    <img src="/brand/flag-dominicana.webp" alt="Bandera de República Dominicana" width="16" height="16" style="flex:none;object-fit:contain;" />
   </div>
 </div>
 
@@ -437,7 +431,8 @@ const LANDING_HTML = `
         <h4>Empresa</h4>
         <ul>
           <li><a href="#">Sobre nosotros</a></li>
-          <li><a href="#contacto">Contacto</a></li>
+          <li><a href="mailto:info@cercanard.com">info@cercanard.com</a></li>
+          <li><a href="https://wa.me/18293748878" target="_blank" rel="noreferrer">WhatsApp: 829-374-8878</a></li>
           <li><a href="#">Términos y condiciones</a></li>
           <li><a href="#">Política de privacidad</a></li>
         </ul>
@@ -446,18 +441,13 @@ const LANDING_HTML = `
       <div class="footer-col">
         <h4>Síguenos</h4>
         <div class="social-row">
+          <a href="https://wa.me/18293748878" target="_blank" rel="noreferrer" aria-label="WhatsApp"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm0 18.14h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.37c0-4.53 3.69-8.22 8.24-8.22 2.2 0 4.27.86 5.82 2.42a8.17 8.17 0 0 1 2.41 5.81c0 4.53-3.69 8.22-8.22 8.22Zm4.51-6.16c-.25-.12-1.46-.72-1.68-.8-.23-.08-.39-.12-.56.12-.16.25-.64.8-.78.96-.14.16-.29.18-.53.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.16.04-.31-.02-.43-.06-.12-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.42h-.48c-.16 0-.43.06-.65.31-.23.25-.85.83-.85 2.03s.87 2.36 1 2.52c.12.16 1.7 2.6 4.13 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.46-.6 1.66-1.17.2-.58.2-1.08.14-1.18-.06-.11-.22-.17-.47-.29Z"/></svg></a>
           <a href="#" aria-label="Facebook"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3.1h-3.1V8c0-.9.2-1.5 1.6-1.5H17V3.7C16.6 3.6 15.4 3.5 14 3.5c-2.8 0-4.7 1.7-4.7 4.9v2.5H6.6V14h2.7v7h4.2z"/></svg></a>
           <a href="#" aria-label="Instagram"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
           <a href="#" aria-label="LinkedIn"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6.94 8.5H3.56V21h3.38V8.5zM5.25 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM21 21v-7.1c0-3.4-1.8-5-4.3-5-2 0-2.9 1.1-3.4 1.9V8.5H10v12.5h3.4v-7c0-.4 0-.7.1-1 .3-.7 1-1.5 2.1-1.5 1.5 0 2.1 1.1 2.1 2.8v6.7H21z"/></svg></a>
         </div>
         <div class="made-in">
-          <svg width="18" height="13" viewBox="0 0 20 14" style="border-radius:2px;flex:none;">
-            <rect width="20" height="14" fill="#fff"/>
-            <rect width="20" height="6" fill="#002D62"/>
-            <rect y="8" width="20" height="6" fill="#CE1126"/>
-            <rect x="8.4" width="3.2" height="6" fill="#002D62"/>
-            <rect x="8.4" y="8" width="3.2" height="6" fill="#CE1126"/>
-          </svg>
+          <img src="/brand/flag-dominicana.webp" alt="Bandera de República Dominicana" width="16" height="16" style="flex:none;object-fit:contain;" />
           Hecho en República Dominicana
         </div>
       </div>
