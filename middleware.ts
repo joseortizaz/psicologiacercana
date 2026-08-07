@@ -34,6 +34,8 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/forgot-password") ||
     request.nextUrl.pathname.startsWith("/registro") ||
+    request.nextUrl.pathname.startsWith("/terminos") ||
+    request.nextUrl.pathname.startsWith("/privacidad") ||
     request.nextUrl.pathname.startsWith("/set-password") ||
     request.nextUrl.pathname.startsWith("/auth/");
 

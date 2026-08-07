@@ -230,6 +230,18 @@ export function SignupRequestForm() {
         </p>
       )}
 
+      <p className="text-xs text-ink/50">
+        Al enviar esta solicitud, aceptas nuestros{" "}
+        <Link href="/terminos" className="underline decoration-ink/20 underline-offset-2">
+          Términos y Condiciones
+        </Link>{" "}
+        y nuestra{" "}
+        <Link href="/privacidad" className="underline decoration-ink/20 underline-offset-2">
+          Política de Privacidad
+        </Link>
+        .
+      </p>
+
       <button
         type="submit"
         disabled={loading}

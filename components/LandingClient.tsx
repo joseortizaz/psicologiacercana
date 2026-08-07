@@ -433,8 +433,8 @@ const LANDING_HTML = `
           <li><a href="#">Sobre nosotros</a></li>
           <li><a href="mailto:info@cercanard.com">info@cercanard.com</a></li>
           <li><a href="https://wa.me/18293748878" target="_blank" rel="noreferrer">WhatsApp: 829-374-8878</a></li>
-          <li><a href="#">Términos y condiciones</a></li>
-          <li><a href="#">Política de privacidad</a></li>
+          <li><a href="/terminos">Términos y condiciones</a></li>
+          <li><a href="/privacidad">Política de privacidad</a></li>
         </ul>
       </div>
 
