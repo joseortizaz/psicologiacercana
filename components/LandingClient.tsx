@@ -266,7 +266,7 @@ const LANDING_HTML = `
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Firma digital de consentimientos</li>
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Soporte por correo</li>
         </ul>
-        <a href="#contacto" class="btn btn-outline btn-block">Comenzar ahora</a>
+        <a href="/registro" class="btn btn-outline btn-block">Comenzar ahora</a>
       </div>
 
       <!-- Plan B -->
@@ -289,7 +289,7 @@ const LANDING_HTML = `
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Agenda compartida</li>
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Soporte prioritario</li>
         </ul>
-        <a href="#contacto" class="btn btn-outline btn-block">Comenzar ahora</a>
+        <a href="/registro" class="btn btn-outline btn-block">Comenzar ahora</a>
       </div>
 
       <!-- Plan C -->
@@ -314,7 +314,7 @@ const LANDING_HTML = `
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 1 supervisor clínico</li>
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Reportes avanzados</li>
         </ul>
-        <a href="#contacto" class="btn btn-dark btn-block">Comenzar ahora</a>
+        <a href="/registro" class="btn btn-dark btn-block">Comenzar ahora</a>
       </div>
 
       <!-- Plan D -->
@@ -338,7 +338,7 @@ const LANDING_HTML = `
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 2 supervisores clínicos</li>
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Reportes avanzados</li>
         </ul>
-        <a href="#contacto" class="btn btn-outline btn-block">Comenzar ahora</a>
+        <a href="/registro" class="btn btn-outline btn-block">Comenzar ahora</a>
       </div>
 
       <!-- Plan E -->
@@ -359,7 +359,7 @@ const LANDING_HTML = `
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Acompañamiento dedicado</li>
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Integración con tu clínica</li>
         </ul>
-        <a href="#contacto" class="btn btn-dark btn-block">Contactar a servicio</a>
+        <a href="mailto:info@cercanard.com?subject=Solicitud%20servicio%20personalizado" class="btn btn-dark btn-block">Contactar a servicio</a>
       </div>
 
     </div>
