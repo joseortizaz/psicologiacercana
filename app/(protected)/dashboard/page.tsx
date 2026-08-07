@@ -34,6 +34,10 @@ export default async function HomePage() {
     redirect("/supervisor");
   }
 
+  if (profile?.role === "psychiatrist") {
+    redirect("/psychiatrist");
+  }
+
   return (
     <div className="rounded-lg border border-line bg-white/60 p-8">
       <p className="font-display text-xl text-deep">Bienvenido a Cercana</p>
