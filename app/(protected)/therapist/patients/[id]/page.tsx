@@ -5,7 +5,15 @@ import { ScheduleAppointmentForm } from "@/components/ScheduleAppointmentForm";
 import { AppointmentStatusButtons } from "@/components/AppointmentStatusButtons";
 import { ClinicalRecordPanel } from "@/components/ClinicalRecordPanel";
 import { AddConsultationForm } from "@/components/AddConsultationForm";
-import type { Appointment, ClinicalRecord, Consultation, Patient } from "@/lib/types";
+import { TeamMembersPanel } from "@/components/TeamMembersPanel";
+import { CARE_TEAM_ROLES } from "@/lib/roles";
+import type {
+  Appointment,
+  ClinicalRecord,
+  ClinicalRecordTeamMember,
+  Consultation,
+  Patient,
+} from "@/lib/types";
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: "Agendada",
@@ -83,6 +91,29 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
         .order("session_date", { ascending: false })
         .returns<Consultation[]>()
     : { data: [] as Consultation[] };
+
+  const [{ data: teamMembers }, { data: clinicStaff }] = clinicalRecord
+    ? await Promise.all([
+        supabase
+          .from("clinical_record_team_members")
+          .select(
+            "id, organization_id, clinical_record_id, clinician_id, role_in_team, active, added_by, added_at, updated_at, clinician:profiles!clinical_record_team_members_clinician_id_fkey(id, full_name, role, email)",
+          )
+          .eq("clinical_record_id", clinicalRecord.id)
+          .eq("active", true)
+          .returns<ClinicalRecordTeamMember[]>(),
+        supabase
+          .from("profiles")
+          .select("id, full_name, role")
+          .eq("organization_id", patient.organization_id)
+          .eq("clinic_id", patient.clinic_id)
+          .eq("active", true)
+          .in("role", CARE_TEAM_ROLES),
+      ])
+    : [{ data: [] as ClinicalRecordTeamMember[] }, { data: [] }];
+
+  const teamMemberIds = new Set((teamMembers ?? []).map((m) => m.clinician_id));
+  const teamCandidates = (clinicStaff ?? []).filter((s) => !teamMemberIds.has(s.id));
 
   return (
     <div className="flex flex-col gap-8">
@@ -206,6 +237,16 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
           <p className="text-sm text-ink/50">Sin citas registradas todavía.</p>
         )}
       </section>
+
+      {clinicalRecord && (
+        <section className="flex flex-col gap-4">
+          <TeamMembersPanel
+            clinicalRecordId={clinicalRecord.id}
+            members={teamMembers ?? []}
+            candidates={teamCandidates}
+          />
+        </section>
+      )}
 
       <section className="flex flex-col gap-4">
         <p className="font-display text-xl text-deep">Expediente clínico y notas de sesión</p>

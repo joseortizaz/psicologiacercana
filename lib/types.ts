@@ -1,4 +1,10 @@
-export type UserRole = "super_admin" | "org_admin" | "therapist" | "assistant" | "supervisor";
+export type UserRole =
+  | "super_admin"
+  | "org_admin"
+  | "therapist"
+  | "assistant"
+  | "supervisor"
+  | "psychiatrist";
 
 export interface Profile {
   id: string;
@@ -196,6 +202,19 @@ export interface ClinicalRecord {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ClinicalRecordTeamMember {
+  id: string;
+  organization_id: string;
+  clinical_record_id: string;
+  clinician_id: string;
+  role_in_team: string | null;
+  active: boolean;
+  added_by: string | null;
+  added_at: string;
+  updated_at: string;
+  clinician?: Pick<Profile, "id" | "full_name" | "role" | "email"> | null;
 }
 
 export interface Consultation {
