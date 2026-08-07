@@ -16,3 +16,27 @@ body {
   outline: 2px solid theme("colors.deep");
   outline-offset: 2px;
 }
+
+.legal-content h2 {
+  @apply mt-9 font-display text-lg text-deep first:mt-0;
+}
+
+.legal-content p {
+  @apply mt-3 text-sm leading-relaxed text-ink/80;
+}
+
+.legal-content ul {
+  @apply mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-ink/80;
+}
+
+.legal-content li::marker {
+  @apply text-ink/40;
+}
+
+.legal-content strong {
+  @apply font-medium text-ink;
+}
+
+.legal-content a {
+  @apply underline decoration-ink/20 underline-offset-2 hover:text-deep;
+}
