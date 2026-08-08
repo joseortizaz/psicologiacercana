@@ -23,7 +23,7 @@
 //     // invocación puede no alcanzar a recorrerlo entero).
 //     "maxNodes": 500,      // tope de entidades a procesar en esta corrida
 //     "maxDepth": 8,        // profundidad máxima desde rootUri
-//     "language": "es"      // Accept-Language pedido a la API de la OMS
+//     "language": "en"      // Accept-Language pedido a la API de la OMS (default "en")
 //   }
 //
 // Respuesta 200:
@@ -127,7 +127,11 @@ async function resolveMmsRoot(token: string, language: string): Promise<WhoEntit
   }
   const releases = (first as unknown as { release?: string[] }).release;
   if (Array.isArray(releases) && releases.length > 0) {
-    const latestUri = releases[releases.length - 1];
+    // Confirmado en vivo (2026-08-08): el array `release` de la OMS viene
+    // ordenado del más reciente al más antiguo (releases[0] es el release
+    // vigente; el último llegó a ser 2018, anterior a la publicación oficial
+    // de la CIE-11 en 2019) — NO al revés como se asumió originalmente.
+    const latestUri = releases[0];
     return await fetchWhoEntity(latestUri, token, language);
   }
   throw new Error(
@@ -235,7 +239,13 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Body inválido, se esperaba JSON" }, 400);
   }
 
-  const language = payload.language?.trim() || "es";
+  // "en" por defecto: confirmado en vivo (2026-08-08) que no todos los
+  // releases/entidades de la OMS tienen traducción a otros idiomas (un
+  // intento con "es" contra un release sin esa traducción devuelve 404
+  // "Not available in the requested language"). Además CHAPTER_TITLE_MATCH
+  // busca el título del capítulo en inglés. Se puede pedir otro idioma
+  // explícitamente vía payload.language a riesgo de que falte traducción.
+  const language = payload.language?.trim() || "en";
   const maxNodes = payload.maxNodes && payload.maxNodes > 0 ? payload.maxNodes : DEFAULT_MAX_NODES;
   const maxDepth = payload.maxDepth && payload.maxDepth > 0 ? payload.maxDepth : DEFAULT_MAX_DEPTH;
 
