@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AppointmentStatusButtons } from "@/components/AppointmentStatusButtons";
+import { ExportCsvButton } from "@/components/ExportCsvButton";
+import { ImportAppointmentsCsv } from "@/components/ImportAppointmentsCsv";
+import type { Profile } from "@/lib/types";
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: "Agendada",
@@ -23,11 +26,27 @@ export default async function TherapistAppointmentsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, organization_id, clinic_id")
+    .eq("id", user!.id)
+    .single<Profile>();
+
   const { data: appointments } = await supabase
     .from("appointments")
     .select("id, start_time, end_time, modality, status, patient:patients(id, full_name)")
     .eq("therapist_id", user!.id)
     .order("start_time", { ascending: true });
+
+  const exportRows = (appointments ?? []).map((a) => {
+    const patient = Array.isArray(a.patient) ? a.patient[0] : a.patient;
+    return {
+      start_time: new Date(a.start_time).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }),
+      patient: patient?.full_name ?? "",
+      modality: MODALITY_LABELS[a.modality] ?? a.modality,
+      status: STATUS_LABELS[a.status] ?? a.status,
+    };
+  });
 
   const groups = new Map<string, typeof appointments>();
   for (const appt of appointments ?? []) {
@@ -43,7 +62,27 @@ export default async function TherapistAppointmentsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="font-display text-2xl text-deep">Citas</p>
+      <div className="flex items-center justify-between">
+        <p className="font-display text-2xl text-deep">Citas</p>
+        <div className="flex gap-3">
+          <ExportCsvButton
+            rows={exportRows}
+            columns={[
+              { key: "start_time", label: "Fecha y hora" },
+              { key: "patient", label: "Paciente" },
+              { key: "modality", label: "Modalidad" },
+              { key: "status", label: "Estado" },
+            ]}
+            filename="citas.csv"
+            auditTable="appointments"
+          />
+          <ImportAppointmentsCsv
+            organizationId={profile!.organization_id!}
+            clinicId={profile!.clinic_id!}
+            therapistId={user!.id}
+          />
+        </div>
+      </div>
 
       {groups.size > 0 ? (
         <div className="flex flex-col gap-6">

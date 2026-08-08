@@ -1,3 +1,4 @@
+import { ExportCsvButton } from "@/components/ExportCsvButton";
 import type { PatientDiagnosis } from "@/lib/types";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -16,9 +17,36 @@ export function DiagnosesList({ diagnoses }: { diagnoses: PatientDiagnosis[] }) 
     return <p className="text-sm text-ink/50">Todavía no hay diagnósticos registrados.</p>;
   }
 
+  const exportRows = diagnoses.map((d) => ({
+    code: d.diagnosis_code?.code ?? "",
+    title: d.diagnosis_code?.title ?? "",
+    type: TYPE_LABELS[d.type] ?? d.type,
+    status: STATUS_LABELS[d.status] ?? d.status,
+    diagnosed_at: new Date(d.diagnosed_at).toLocaleDateString("es-MX", { dateStyle: "medium" }),
+    diagnosed_by: d.diagnosed_by_profile?.full_name ?? "",
+    notes: d.notes ?? "",
+  }));
+
   return (
-    <ul className="flex flex-col gap-3">
-      {diagnoses.map((d) => (
+    <div className="flex flex-col gap-3">
+      <div className="flex justify-end">
+        <ExportCsvButton
+          rows={exportRows}
+          columns={[
+            { key: "code", label: "Código" },
+            { key: "title", label: "Diagnóstico" },
+            { key: "type", label: "Tipo" },
+            { key: "status", label: "Estado" },
+            { key: "diagnosed_at", label: "Fecha" },
+            { key: "diagnosed_by", label: "Diagnosticado por" },
+            { key: "notes", label: "Notas" },
+          ]}
+          filename="diagnosticos.csv"
+          auditTable="patient_diagnoses"
+        />
+      </div>
+      <ul className="flex flex-col gap-3">
+        {diagnoses.map((d) => (
         <li key={d.id} className="rounded-lg border border-line bg-white/60 p-5">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-ink">
@@ -41,6 +69,7 @@ export function DiagnosesList({ diagnoses }: { diagnoses: PatientDiagnosis[] }) 
           {d.notes && <p className="mt-2 text-sm text-ink/80">{d.notes}</p>}
         </li>
       ))}
-    </ul>
+      </ul>
+    </div>
   );
 }

@@ -1,7 +1,27 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CreatePatientForm } from "@/components/CreatePatientForm";
+import { ImportPatientsCsv } from "@/components/ImportPatientsCsv";
+import { ExportCsvButton } from "@/components/ExportCsvButton";
 import type { Patient, Profile } from "@/lib/types";
+
+interface PatientExportRow {
+  full_name: string;
+  category: string;
+  contact_email: string;
+  contact_phone: string;
+  active: string;
+  created_at: string;
+}
+
+const PATIENT_EXPORT_COLUMNS: { key: keyof PatientExportRow; label: string }[] = [
+  { key: "full_name", label: "Nombre" },
+  { key: "category", label: "Categoría" },
+  { key: "contact_email", label: "Correo" },
+  { key: "contact_phone", label: "Teléfono" },
+  { key: "active", label: "Activo" },
+  { key: "created_at", label: "Creado" },
+];
 
 const CATEGORY_LABELS: Record<string, string> = {
   child: "Niño/a",
@@ -29,15 +49,37 @@ export default async function TherapistPatientsPage() {
     .order("full_name", { ascending: true })
     .returns<Patient[]>();
 
+  const exportRows = (patients ?? []).map((p) => ({
+    full_name: p.full_name,
+    category: CATEGORY_LABELS[p.category] ?? p.category,
+    contact_email: p.contact_email ?? "",
+    contact_phone: p.contact_phone ?? "",
+    active: p.active ? "Sí" : "No",
+    created_at: new Date(p.created_at).toLocaleDateString("es-MX", { dateStyle: "medium" }),
+  }));
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <p className="font-display text-2xl text-deep">Pacientes</p>
-        <CreatePatientForm
-          organizationId={profile!.organization_id!}
-          clinicId={profile!.clinic_id!}
-          therapistId={user!.id}
-        />
+        <div className="flex gap-3">
+          <ExportCsvButton
+            rows={exportRows}
+            columns={PATIENT_EXPORT_COLUMNS}
+            filename="pacientes.csv"
+            auditTable="patients"
+          />
+          <ImportPatientsCsv
+            organizationId={profile!.organization_id!}
+            clinicId={profile!.clinic_id!}
+            therapistId={user!.id}
+          />
+          <CreatePatientForm
+            organizationId={profile!.organization_id!}
+            clinicId={profile!.clinic_id!}
+            therapistId={user!.id}
+          />
+        </div>
       </div>
 
       {patients && patients.length > 0 ? (

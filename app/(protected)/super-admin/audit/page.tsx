@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ExportCsvButton } from "@/components/ExportCsvButton";
 import {
   AUDIT_ACTION_BADGE_CLASSES,
   AUDIT_ACTION_LABELS,
@@ -64,6 +65,18 @@ export default async function SuperAdminAuditPage({
   const actorById = new Map((actors ?? []).map((a) => [a.id, a]));
   const orgNameById = new Map((organizations ?? []).map((o) => [o.id, o.name]));
 
+  const exportRows = (logs ?? []).map((log) => {
+    const actor = log.actor_id ? actorById.get(log.actor_id) : undefined;
+    return {
+      occurred_at: new Date(log.occurred_at).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }),
+      organization: log.organization_id ? (orgNameById.get(log.organization_id) ?? "") : "",
+      actor: actor ? actor.full_name : log.actor_id ? "Usuario eliminado" : "Sistema",
+      action: AUDIT_ACTION_LABELS[log.action] ?? log.action,
+      table_name: AUDIT_TABLE_LABELS[log.table_name] ?? log.table_name,
+      record_id: log.record_id,
+    };
+  });
+
   const buildHref = (overrides: { table?: string; action?: string; org?: string }) => {
     const params = new URLSearchParams();
     const table = "table" in overrides ? overrides.table : tableFilter;
@@ -87,12 +100,27 @@ export default async function SuperAdminAuditPage({
             recientes.
           </p>
         </div>
-        <Link
-          href="/super-admin"
-          className="text-sm font-medium text-deep underline decoration-deep/30 underline-offset-2"
-        >
-          Volver
-        </Link>
+        <div className="flex items-center gap-4">
+          <ExportCsvButton
+            rows={exportRows}
+            columns={[
+              { key: "occurred_at", label: "Fecha y hora" },
+              { key: "organization", label: "Clínica" },
+              { key: "actor", label: "Usuario" },
+              { key: "action", label: "Acción" },
+              { key: "table_name", label: "Tabla" },
+              { key: "record_id", label: "Registro" },
+            ]}
+            filename="auditoria.csv"
+            auditTable="audit_logs"
+          />
+          <Link
+            href="/super-admin"
+            className="text-sm font-medium text-deep underline decoration-deep/30 underline-offset-2"
+          >
+            Volver
+          </Link>
+        </div>
       </div>
 
       {organizations && organizations.length > 0 && (

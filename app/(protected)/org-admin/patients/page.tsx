@@ -2,7 +2,31 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CreatePatientForm } from "@/components/CreatePatientForm";
+import { ImportPatientsCsv } from "@/components/ImportPatientsCsv";
+import { ExportCsvButton } from "@/components/ExportCsvButton";
 import type { Clinic, Patient, Profile } from "@/lib/types";
+
+interface PatientExportRow {
+  full_name: string;
+  clinic: string;
+  category: string;
+  therapist: string;
+  contact_email: string;
+  contact_phone: string;
+  active: string;
+  created_at: string;
+}
+
+const PATIENT_EXPORT_COLUMNS: { key: keyof PatientExportRow; label: string }[] = [
+  { key: "full_name", label: "Nombre" },
+  { key: "clinic", label: "Sucursal" },
+  { key: "category", label: "Categoría" },
+  { key: "therapist", label: "Terapeuta" },
+  { key: "contact_email", label: "Correo" },
+  { key: "contact_phone", label: "Teléfono" },
+  { key: "active", label: "Activo" },
+  { key: "created_at", label: "Creado" },
+];
 
 const CATEGORY_LABELS: Record<string, string> = {
   child: "Niño/a",
@@ -64,22 +88,55 @@ export default async function OrgAdminPatientsPage({
   const clinicNameById = new Map((clinics ?? []).map((c) => [c.id, c.name]));
   const activeClinics = (clinics ?? []).filter((c) => c.active);
 
+  const exportRows = (patients ?? []).map((p) => ({
+    full_name: p.full_name,
+    clinic: clinicNameById.get(p.clinic_id) ?? "",
+    category: CATEGORY_LABELS[p.category] ?? p.category,
+    therapist: p.primary_therapist_id
+      ? ((therapists ?? []).find((t) => t.id === p.primary_therapist_id)?.full_name ?? "")
+      : "Sin asignar",
+    contact_email: p.contact_email ?? "",
+    contact_phone: p.contact_phone ?? "",
+    active: p.active ? "Sí" : "No",
+    created_at: new Date(p.created_at).toLocaleDateString("es-MX", { dateStyle: "medium" }),
+  }));
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <p className="font-display text-2xl text-deep">Pacientes</p>
-        {activeClinics.length > 0 && (
-          <CreatePatientForm
-            organizationId={profile!.organization_id!}
-            createdBy={user!.id}
-            assignableClinics={activeClinics.map((c) => ({ id: c.id, name: c.name }))}
-            assignableTherapists={(therapists ?? []).map((t) => ({
-              id: t.id,
-              full_name: t.full_name,
-              clinic_id: t.clinic_id ?? undefined,
-            }))}
+        <div className="flex gap-3">
+          <ExportCsvButton
+            rows={exportRows}
+            columns={PATIENT_EXPORT_COLUMNS}
+            filename="pacientes.csv"
+            auditTable="patients"
           />
-        )}
+          {activeClinics.length > 0 && (
+            <>
+              <ImportPatientsCsv
+                organizationId={profile!.organization_id!}
+                createdBy={user!.id}
+                assignableClinics={activeClinics.map((c) => ({ id: c.id, name: c.name }))}
+                assignableTherapists={(therapists ?? []).map((t) => ({
+                  id: t.id,
+                  full_name: t.full_name,
+                  clinic_id: t.clinic_id ?? undefined,
+                }))}
+              />
+              <CreatePatientForm
+                organizationId={profile!.organization_id!}
+                createdBy={user!.id}
+                assignableClinics={activeClinics.map((c) => ({ id: c.id, name: c.name }))}
+                assignableTherapists={(therapists ?? []).map((t) => ({
+                  id: t.id,
+                  full_name: t.full_name,
+                  clinic_id: t.clinic_id ?? undefined,
+                }))}
+              />
+            </>
+          )}
+        </div>
       </div>
 
       {clinics && clinics.length > 0 && (

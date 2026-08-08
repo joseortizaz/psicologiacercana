@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ExportCsvButton } from "@/components/ExportCsvButton";
 import {
   AUDIT_ACTION_BADGE_CLASSES,
   AUDIT_ACTION_LABELS,
@@ -56,15 +57,40 @@ export default async function OrgAdminAuditPage({
 
   const actorById = new Map((actors ?? []).map((a) => [a.id, a]));
 
+  const exportRows = (logs ?? []).map((log) => {
+    const actor = log.actor_id ? actorById.get(log.actor_id) : undefined;
+    return {
+      occurred_at: new Date(log.occurred_at).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }),
+      actor: actor ? actor.full_name : log.actor_id ? "Usuario eliminado" : "Sistema",
+      action: AUDIT_ACTION_LABELS[log.action] ?? log.action,
+      table_name: AUDIT_TABLE_LABELS[log.table_name] ?? log.table_name,
+      record_id: log.record_id,
+    };
+  });
+
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <p className="font-display text-2xl text-deep">Auditoría</p>
-        <p className="mt-1 text-sm text-ink/50">
-          Registro inmutable de creación, edición, eliminación y acceso a datos sensibles en tu
-          organización. Mostrando los {Math.min(logs?.length ?? 0, MAX_ROWS)} eventos más
-          recientes.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-display text-2xl text-deep">Auditoría</p>
+          <p className="mt-1 text-sm text-ink/50">
+            Registro inmutable de creación, edición, eliminación y acceso a datos sensibles en tu
+            organización. Mostrando los {Math.min(logs?.length ?? 0, MAX_ROWS)} eventos más
+            recientes.
+          </p>
+        </div>
+        <ExportCsvButton
+          rows={exportRows}
+          columns={[
+            { key: "occurred_at", label: "Fecha y hora" },
+            { key: "actor", label: "Usuario" },
+            { key: "action", label: "Acción" },
+            { key: "table_name", label: "Tabla" },
+            { key: "record_id", label: "Registro" },
+          ]}
+          filename="auditoria.csv"
+          auditTable="audit_logs"
+        />
       </div>
 
       <div className="flex flex-wrap gap-2">
