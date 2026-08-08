@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createClient } from "@/lib/supabase/client";
 import "@/app/landing.css";
 
 const LANDING_HTML = `
@@ -359,7 +360,7 @@ const LANDING_HTML = `
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Acompañamiento dedicado</li>
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Integración con tu clínica</li>
         </ul>
-        <a href="mailto:info@cercanard.com?subject=Solicitud%20servicio%20personalizado" class="btn btn-dark btn-block">Contactar a servicio</a>
+        <button type="button" onclick="window.__cercanaOpenContactModal()" class="btn btn-dark btn-block">Contactar a servicio</button>
       </div>
 
     </div>
@@ -459,6 +460,78 @@ const LANDING_HTML = `
     </div>
   </div>
 </footer>
+
+<!-- ================= MODAL DE CONTACTO ================= -->
+<div class="contact-modal-overlay" onclick="window.__cercanaCloseContactModal()">
+  <div class="contact-modal" onclick="event.stopPropagation()">
+    <button class="contact-modal-close" onclick="window.__cercanaCloseContactModal()" aria-label="Cerrar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+
+    <div class="contact-modal-head">
+      <p class="eyebrow">Contáctanos</p>
+      <h2>Hablemos de tu proyecto</h2>
+      <p class="contact-modal-sub">Cuéntanos sobre tu clínica y un miembro de nuestro equipo te contactará en menos de 24 horas para armar un plan Institucional a tu medida.</p>
+    </div>
+
+    <div class="contact-modal-grid">
+      <div>
+        <div class="contact-info-card">
+          <h3>Información de contacto</h3>
+          <div class="contact-info-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+            <a href="mailto:info@cercanard.com">info@cercanard.com</a>
+          </div>
+          <div class="contact-info-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <a href="https://wa.me/18293748878" target="_blank" rel="noreferrer">WhatsApp: 829-374-8878</a>
+          </div>
+          <div class="contact-info-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>República Dominicana</span>
+          </div>
+        </div>
+        <div class="contact-info-legal">
+          <p>Narnia Tech Solution, SRL</p>
+          <p>RNC: 1-33-74485-6</p>
+        </div>
+      </div>
+
+      <div class="contact-form-card">
+        <p id="contact-form-error" class="contact-form-error"></p>
+        <form id="contact-form" onsubmit="window.__cercanaSubmitContactForm(event); return false;">
+          <div class="contact-form-row">
+            <div class="form-field">
+              <label for="contact-name">Nombre *</label>
+              <input id="contact-name" name="name" type="text" autocomplete="name" required>
+            </div>
+            <div class="form-field">
+              <label for="contact-email">Correo *</label>
+              <input id="contact-email" name="email" type="email" autocomplete="email" required>
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="contact-phone">Teléfono</label>
+            <input id="contact-phone" name="phone" type="tel" autocomplete="tel">
+          </div>
+          <div class="form-field">
+            <label for="contact-message">Mensaje *</label>
+            <textarea id="contact-message" name="message" required placeholder="Cuéntanos cuántos terapeutas son y qué necesitas..."></textarea>
+          </div>
+          <button type="submit" id="contact-form-submit" class="btn btn-primary btn-block">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Enviar mensaje
+          </button>
+        </form>
+        <div id="contact-form-success" class="contact-form-success">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>
+          <h3>¡Mensaje enviado!</h3>
+          <p>Gracias por escribirnos. Un miembro de nuestro equipo te contactará en menos de 24 horas.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 `;
 
 export function LandingClient() {
@@ -468,6 +541,9 @@ export function LandingClient() {
     const w = window as unknown as {
       __cercanaToggleNav?: () => void;
       __cercanaSetBilling?: (mode: "monthly" | "annual") => void;
+      __cercanaOpenContactModal?: () => void;
+      __cercanaCloseContactModal?: () => void;
+      __cercanaSubmitContactForm?: (event: Event) => void;
     };
 
     w.__cercanaToggleNav = () => {
@@ -488,9 +564,104 @@ export function LandingClient() {
       });
     };
 
+    // Resetea el formulario de contacto a su estado inicial (usado al cerrar
+    // el modal, para que la próxima vez que se abra no muestre el mensaje de
+    // éxito ni un error anterior).
+    function resetContactForm() {
+      const root = rootRef.current;
+      if (!root) return;
+      const form = root.querySelector<HTMLFormElement>("#contact-form");
+      const errorEl = root.querySelector<HTMLParagraphElement>("#contact-form-error");
+      const successEl = root.querySelector<HTMLDivElement>("#contact-form-success");
+      const submitBtn = root.querySelector<HTMLButtonElement>("#contact-form-submit");
+      form?.reset();
+      if (form) form.style.display = "";
+      if (successEl) successEl.style.display = "none";
+      if (errorEl) {
+        errorEl.style.display = "none";
+        errorEl.textContent = "";
+      }
+      if (submitBtn) submitBtn.disabled = false;
+    }
+
+    w.__cercanaOpenContactModal = () => {
+      rootRef.current?.classList.add("contact-modal-open");
+      document.body.style.overflow = "hidden";
+    };
+
+    w.__cercanaCloseContactModal = () => {
+      rootRef.current?.classList.remove("contact-modal-open");
+      document.body.style.overflow = "";
+      resetContactForm();
+    };
+
+    w.__cercanaSubmitContactForm = (event: Event) => {
+      event.preventDefault();
+      const root = rootRef.current;
+      if (!root) return;
+
+      const form = root.querySelector<HTMLFormElement>("#contact-form");
+      const errorEl = root.querySelector<HTMLParagraphElement>("#contact-form-error");
+      const successEl = root.querySelector<HTMLDivElement>("#contact-form-success");
+      const submitBtn = root.querySelector<HTMLButtonElement>("#contact-form-submit");
+      if (!form || !errorEl || !successEl || !submitBtn) return;
+
+      const name = form.querySelector<HTMLInputElement>("#contact-name")?.value.trim() ?? "";
+      const email = form.querySelector<HTMLInputElement>("#contact-email")?.value.trim() ?? "";
+      const phone = form.querySelector<HTMLInputElement>("#contact-phone")?.value.trim() ?? "";
+      const message = form.querySelector<HTMLTextAreaElement>("#contact-message")?.value.trim() ?? "";
+
+      errorEl.style.display = "none";
+      errorEl.textContent = "";
+
+      if (!name || !email || !message) {
+        errorEl.textContent = "Completa los campos requeridos.";
+        errorEl.style.display = "block";
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Enviando...";
+
+      const supabase = createClient();
+      supabase
+        .from("contact_requests")
+        .insert({
+          name,
+          email,
+          phone: phone || null,
+          message,
+          plan_interest: "institucional",
+        })
+        .then(({ error }) => {
+          if (error) {
+            errorEl.textContent =
+              "No pudimos enviar tu mensaje. Inténtalo de nuevo o escríbenos directamente a info@cercanard.com.";
+            errorEl.style.display = "block";
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Enviar mensaje";
+            return;
+          }
+          form.style.display = "none";
+          successEl.style.display = "block";
+        });
+    };
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        w.__cercanaCloseContactModal?.();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+
     return () => {
       delete w.__cercanaToggleNav;
       delete w.__cercanaSetBilling;
+      delete w.__cercanaOpenContactModal;
+      delete w.__cercanaCloseContactModal;
+      delete w.__cercanaSubmitContactForm;
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
     };
   }, []);
 
