@@ -53,10 +53,16 @@ const API_BASE = "https://id.who.int";
 const MMS_ROOT_URL = `${API_BASE}/icd/release/11/mms`;
 const CHAPTER_TITLE_MATCH = /mental,?\s+behavioural\s+or\s+neurodevelopmental\s+disorders/i;
 
-const DEFAULT_MAX_NODES = 500;
-const DEFAULT_MAX_DEPTH = 8;
-const TIME_BUDGET_MS = 45_000; // deja margen dentro del límite de ejecución del Edge Function
-const CONCURRENCY = 5;
+// Ajustado tras la primera corrida real (2026-08-08): 500 nodos tardaron
+// ~27s con concurrencia 5, es decir el tope de nodos se alcanzaba mucho
+// antes que el presupuesto de tiempo. Se sube el tope de nodos para que el
+// tiempo (no la cuenta de nodos) sea el límite real de cada corrida, y se
+// amplía el presupuesto de tiempo dejando margen bajo el límite de
+// ejecución de Supabase Edge Functions.
+const DEFAULT_MAX_NODES = 4000;
+const DEFAULT_MAX_DEPTH = 10;
+const TIME_BUDGET_MS = 100_000;
+const CONCURRENCY = 8;
 
 interface WhoTitle {
   "@value"?: string;
