@@ -226,6 +226,9 @@ select is(
 -- storage.protect_delete() sobre storage.objects, que lanza una excepción
 -- ante CUALQUIER DELETE directo (sin pasar por la Storage API) -- ni
 -- siquiera llega a evaluarse la falta de policy de DELETE de esta suite.
+-- El trigger relanza el error con SQLSTATE 42501 (insufficient_privilege),
+-- no P0001 (confirmado en CI) -- ver mensaje: "Direct deletion from storage
+-- tables is not allowed. Use the Storage API instead."
 -- ---------------------------------------------------------------
 select tests.authenticate_as('evs_therapist');
 select throws_ok(
@@ -233,7 +236,7 @@ select throws_ok(
     $$ delete from storage.objects where bucket_id = 'evaluation-reports' and name = '%s' $$,
     :'obj_path'
   ),
-  'P0001',
+  '42501',
   null,
   'Caso 13: DELETE está siempre bloqueado, incluso para quien subió el archivo (storage.protect_delete())'
 );
