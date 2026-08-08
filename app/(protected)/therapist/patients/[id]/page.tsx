@@ -6,6 +6,8 @@ import { AppointmentStatusButtons } from "@/components/AppointmentStatusButtons"
 import { ClinicalRecordPanel } from "@/components/ClinicalRecordPanel";
 import { AddConsultationForm } from "@/components/AddConsultationForm";
 import { TeamMembersPanel } from "@/components/TeamMembersPanel";
+import { DiagnosesList } from "@/components/DiagnosesList";
+import { PrescriptionsList } from "@/components/PrescriptionsList";
 import { CARE_TEAM_ROLES } from "@/lib/roles";
 import type {
   Appointment,
@@ -13,6 +15,8 @@ import type {
   ClinicalRecordTeamMember,
   Consultation,
   Patient,
+  PatientDiagnosis,
+  PrescriptionRecord,
 } from "@/lib/types";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -114,6 +118,27 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
 
   const teamMemberIds = new Set((teamMembers ?? []).map((m) => m.clinician_id));
   const teamCandidates = (clinicStaff ?? []).filter((s) => !teamMemberIds.has(s.id));
+
+  const [{ data: diagnoses }, { data: prescriptions }] = clinicalRecord
+    ? await Promise.all([
+        supabase
+          .from("patient_diagnoses")
+          .select(
+            "id, organization_id, clinic_id, patient_id, clinical_record_id, diagnosis_code_id, type, status, diagnosed_by, diagnosed_at, notes, created_at, updated_at, diagnosis_code:diagnosis_codes(code, title), diagnosed_by_profile:profiles!patient_diagnoses_diagnosed_by_fkey(full_name)",
+          )
+          .eq("clinical_record_id", clinicalRecord.id)
+          .order("diagnosed_at", { ascending: false })
+          .returns<PatientDiagnosis[]>(),
+        supabase
+          .from("prescription_records")
+          .select(
+            "id, organization_id, clinic_id, patient_id, clinical_record_id, prescribing_clinician_id, issued_at, diagnosis_id, notes, created_at, updated_at, prescribing_clinician:profiles!prescription_records_prescribing_clinician_id_fkey(full_name), items:prescription_items(id, organization_id, clinic_id, clinical_record_id, prescription_record_id, medication_name, dosage, frequency, duration, instructions, is_controlled, created_at, updated_at)",
+          )
+          .eq("clinical_record_id", clinicalRecord.id)
+          .order("issued_at", { ascending: false })
+          .returns<PrescriptionRecord[]>(),
+      ])
+    : [{ data: [] as PatientDiagnosis[] }, { data: [] as PrescriptionRecord[] }];
 
   return (
     <div className="flex flex-col gap-8">
@@ -328,6 +353,26 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
           </>
         )}
       </section>
+
+      {clinicalRecord && (
+        <>
+          <section className="flex flex-col gap-4">
+            <p className="font-display text-xl text-deep">Diagnósticos</p>
+            <p className="-mt-2 text-sm text-ink/50">
+              Solo un psiquiatra miembro del equipo puede registrar diagnósticos.
+            </p>
+            <DiagnosesList diagnoses={diagnoses ?? []} />
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <p className="font-display text-xl text-deep">Recetas</p>
+            <p className="-mt-2 text-sm text-ink/50">
+              Solo un psiquiatra miembro del equipo puede registrar recetas.
+            </p>
+            <PrescriptionsList records={prescriptions ?? []} />
+          </section>
+        </>
+      )}
     </div>
   );
 }

@@ -4,8 +4,19 @@ import { createClient } from "@/lib/supabase/server";
 import { ClinicalRecordPanel } from "@/components/ClinicalRecordPanel";
 import { AddConsultationForm } from "@/components/AddConsultationForm";
 import { TeamMembersPanel } from "@/components/TeamMembersPanel";
+import { AddDiagnosisForm } from "@/components/AddDiagnosisForm";
+import { DiagnosesList } from "@/components/DiagnosesList";
+import { AddPrescriptionForm } from "@/components/AddPrescriptionForm";
+import { PrescriptionsList } from "@/components/PrescriptionsList";
 import { CARE_TEAM_ROLES } from "@/lib/roles";
-import type { ClinicalRecord, ClinicalRecordTeamMember, Consultation, Patient } from "@/lib/types";
+import type {
+  ClinicalRecord,
+  ClinicalRecordTeamMember,
+  Consultation,
+  Patient,
+  PatientDiagnosis,
+  PrescriptionRecord,
+} from "@/lib/types";
 
 const CATEGORY_LABELS: Record<string, string> = {
   child: "Niño/a",
@@ -59,7 +70,13 @@ export default async function PsychiatristPatientDetailPage({
     .limit(1)
     .maybeSingle<ClinicalRecord>();
 
-  const [{ data: consultations }, { data: teamMembers }, { data: clinicStaff }] = await Promise.all([
+  const [
+    { data: consultations },
+    { data: teamMembers },
+    { data: clinicStaff },
+    { data: diagnoses },
+    { data: prescriptions },
+  ] = await Promise.all([
     clinicalRecord
       ? supabase
           .from("consultations")
@@ -87,6 +104,26 @@ export default async function PsychiatristPatientDetailPage({
       .eq("clinic_id", patient.clinic_id)
       .eq("active", true)
       .in("role", CARE_TEAM_ROLES),
+    clinicalRecord
+      ? supabase
+          .from("patient_diagnoses")
+          .select(
+            "id, organization_id, clinic_id, patient_id, clinical_record_id, diagnosis_code_id, type, status, diagnosed_by, diagnosed_at, notes, created_at, updated_at, diagnosis_code:diagnosis_codes(code, title), diagnosed_by_profile:profiles!patient_diagnoses_diagnosed_by_fkey(full_name)",
+          )
+          .eq("clinical_record_id", clinicalRecord.id)
+          .order("diagnosed_at", { ascending: false })
+          .returns<PatientDiagnosis[]>()
+      : Promise.resolve({ data: [] as PatientDiagnosis[] }),
+    clinicalRecord
+      ? supabase
+          .from("prescription_records")
+          .select(
+            "id, organization_id, clinic_id, patient_id, clinical_record_id, prescribing_clinician_id, issued_at, diagnosis_id, notes, created_at, updated_at, prescribing_clinician:profiles!prescription_records_prescribing_clinician_id_fkey(full_name), items:prescription_items(id, organization_id, clinic_id, clinical_record_id, prescription_record_id, medication_name, dosage, frequency, duration, instructions, is_controlled, created_at, updated_at)",
+          )
+          .eq("clinical_record_id", clinicalRecord.id)
+          .order("issued_at", { ascending: false })
+          .returns<PrescriptionRecord[]>()
+      : Promise.resolve({ data: [] as PrescriptionRecord[] }),
   ]);
 
   const memberIds = new Set((teamMembers ?? []).map((m) => m.clinician_id));
@@ -191,6 +228,33 @@ export default async function PsychiatristPatientDetailPage({
             ) : (
               <p className="text-sm text-ink/50">Todavía no hay notas de sesión.</p>
             )}
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <p className="font-display text-xl text-deep">Diagnósticos</p>
+
+            <AddDiagnosisForm
+              clinicId={patient.clinic_id}
+              patientId={patient.id}
+              clinicalRecordId={clinicalRecord.id}
+              diagnosedBy={user!.id}
+            />
+
+            <DiagnosesList diagnoses={diagnoses ?? []} />
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <p className="font-display text-xl text-deep">Recetas</p>
+
+            <AddPrescriptionForm
+              organizationId={patient.organization_id}
+              clinicId={patient.clinic_id}
+              patientId={patient.id}
+              clinicalRecordId={clinicalRecord.id}
+              prescribingClinicianId={user!.id}
+            />
+
+            <PrescriptionsList records={prescriptions ?? []} />
           </section>
         </>
       )}
