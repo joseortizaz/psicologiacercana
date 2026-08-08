@@ -336,3 +336,34 @@ export interface ContactRequest {
   created_at: string;
   updated_at: string;
 }
+
+// ----------------------------------------------------------------------------
+// Registro de Evaluaciones (evaluation_reports). Solo se registran informes
+// y resultados de evaluaciones ya aplicadas por el propio clínico fuera de
+// la app -- nunca se digitaliza el instrumento en sí (reactivos, baremos,
+// algoritmos de corrección). test_name es texto libre, sin catálogo.
+// ----------------------------------------------------------------------------
+
+export type EvaluationStatus = "draft" | "finalized";
+
+export interface EvaluationReport {
+  id: string;
+  organization_id: string;
+  clinic_id: string;
+  patient_id: string;
+  clinical_record_id: string;
+  administered_by: string;
+  diagnosis_id: string | null;
+  test_name: string;
+  administered_at: string;
+  score_summary: string | null;
+  interpretation: string | null;
+  attachment_path: string | null;
+  status: EvaluationStatus;
+  finalized_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  administered_by_profile?: Pick<Profile, "full_name" | "role"> | null;
+  diagnosis?: { diagnosis_code?: Pick<DiagnosisCode, "code" | "title"> | null } | null;
+}

@@ -8,12 +8,14 @@ import { AddDiagnosisForm } from "@/components/AddDiagnosisForm";
 import { DiagnosesList } from "@/components/DiagnosesList";
 import { AddPrescriptionForm } from "@/components/AddPrescriptionForm";
 import { PrescriptionsList } from "@/components/PrescriptionsList";
+import { EvaluationsList } from "@/components/EvaluationsList";
 import { PrintExportRecordButton } from "@/components/PrintExportRecordButton";
 import { CARE_TEAM_ROLES } from "@/lib/roles";
 import type {
   ClinicalRecord,
   ClinicalRecordTeamMember,
   Consultation,
+  EvaluationReport,
   Patient,
   PatientDiagnosis,
   PrescriptionRecord,
@@ -77,6 +79,7 @@ export default async function PsychiatristPatientDetailPage({
     { data: clinicStaff },
     { data: diagnoses },
     { data: prescriptions },
+    { data: evaluations },
   ] = await Promise.all([
     clinicalRecord
       ? supabase
@@ -125,6 +128,16 @@ export default async function PsychiatristPatientDetailPage({
           .order("issued_at", { ascending: false })
           .returns<PrescriptionRecord[]>()
       : Promise.resolve({ data: [] as PrescriptionRecord[] }),
+    clinicalRecord
+      ? supabase
+          .from("evaluation_reports")
+          .select(
+            "id, organization_id, clinic_id, patient_id, clinical_record_id, administered_by, diagnosis_id, test_name, administered_at, score_summary, interpretation, attachment_path, status, finalized_at, created_by, created_at, updated_at, administered_by_profile:profiles!evaluation_reports_administered_by_fkey(full_name, role), diagnosis:patient_diagnoses!evaluation_reports_diagnosis_id_fkey(diagnosis_code:diagnosis_codes(code, title))",
+          )
+          .eq("clinical_record_id", clinicalRecord.id)
+          .order("administered_at", { ascending: false })
+          .returns<EvaluationReport[]>()
+      : Promise.resolve({ data: [] as EvaluationReport[] }),
   ]);
 
   const memberIds = new Set((teamMembers ?? []).map((m) => m.clinician_id));
@@ -269,6 +282,14 @@ export default async function PsychiatristPatientDetailPage({
             />
 
             <PrescriptionsList records={prescriptions ?? []} />
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <p className="font-display text-xl text-deep">Evaluaciones</p>
+            <p className="-mt-2 text-sm text-ink/50">
+              Solo el psicólogo tratante puede registrar evaluaciones.
+            </p>
+            <EvaluationsList evaluations={evaluations ?? []} />
           </section>
         </>
       )}

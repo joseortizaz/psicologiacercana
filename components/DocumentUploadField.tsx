@@ -2,8 +2,11 @@
 
 import { useId, useRef, useState } from "react";
 
-const ACCEPTED_TYPES = ["image/jpeg", "image/png", "application/pdf"];
-const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MiB — debe coincidir con el límite del bucket
+const DEFAULT_ACCEPTED_TYPES = ["image/jpeg", "image/png", "application/pdf"];
+const DEFAULT_MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MiB — debe coincidir con el límite del bucket
+const DEFAULT_ACCEPT_ATTR = "image/jpeg,image/png,application/pdf";
+const DEFAULT_BUTTON_LABEL = "Seleccionar archivo (JPG, PNG o PDF)";
+const DEFAULT_TYPE_ERROR = "Formato no permitido. Usa JPG, PNG o PDF.";
 
 function formatSize(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
@@ -16,12 +19,25 @@ export function DocumentUploadField({
   value,
   onChange,
   required = true,
+  acceptedTypes = DEFAULT_ACCEPTED_TYPES,
+  maxSizeBytes = DEFAULT_MAX_SIZE_BYTES,
+  acceptAttr = DEFAULT_ACCEPT_ATTR,
+  buttonLabel = DEFAULT_BUTTON_LABEL,
+  typeErrorMessage = DEFAULT_TYPE_ERROR,
 }: {
   label: string;
   hint?: string;
   value: File | null;
   onChange: (file: File | null) => void;
   required?: boolean;
+  /** MIME types aceptados -- debe coincidir con allowed_mime_types del bucket. */
+  acceptedTypes?: string[];
+  /** Límite de tamaño en bytes -- debe coincidir con file_size_limit del bucket. */
+  maxSizeBytes?: number;
+  /** Valor del atributo `accept` del <input type=file> nativo. */
+  acceptAttr?: string;
+  buttonLabel?: string;
+  typeErrorMessage?: string;
 }) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -33,14 +49,14 @@ export function DocumentUploadField({
       onChange(null);
       return;
     }
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      setLocalError("Formato no permitido. Usa JPG, PNG o PDF.");
+    if (!acceptedTypes.includes(file.type)) {
+      setLocalError(typeErrorMessage);
       onChange(null);
       if (inputRef.current) inputRef.current.value = "";
       return;
     }
-    if (file.size > MAX_SIZE_BYTES) {
-      setLocalError("El archivo pesa más de 10 MB.");
+    if (file.size > maxSizeBytes) {
+      setLocalError(`El archivo pesa más de ${Math.round(maxSizeBytes / (1024 * 1024))} MB.`);
       onChange(null);
       if (inputRef.current) inputRef.current.value = "";
       return;
@@ -80,7 +96,7 @@ export function DocumentUploadField({
           htmlFor={inputId}
           className="flex cursor-pointer items-center justify-center rounded-md border border-dashed border-line bg-white px-3.5 py-4 text-center text-sm text-ink/50 transition hover:border-deep hover:text-deep"
         >
-          Seleccionar archivo (JPG, PNG o PDF)
+          {buttonLabel}
         </label>
       )}
 
@@ -95,7 +111,7 @@ export function DocumentUploadField({
         ref={inputRef}
         id={inputId}
         type="file"
-        accept="image/jpeg,image/png,application/pdf"
+        accept={acceptAttr}
         onChange={handleFileSelected}
         className="hidden"
       />
