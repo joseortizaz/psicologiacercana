@@ -8,6 +8,7 @@ import { AddConsultationForm } from "@/components/AddConsultationForm";
 import { TeamMembersPanel } from "@/components/TeamMembersPanel";
 import { DiagnosesList } from "@/components/DiagnosesList";
 import { PrescriptionsList } from "@/components/PrescriptionsList";
+import { PrintExportRecordButton } from "@/components/PrintExportRecordButton";
 import { CARE_TEAM_ROLES } from "@/lib/roles";
 import type {
   Appointment,
@@ -151,13 +152,24 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
       <section className="rounded-lg border border-line bg-white/60 p-6">
         <div className="flex items-center justify-between">
           <p className="font-display text-2xl text-deep">{patient.full_name}</p>
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-              patient.active ? "bg-sage/15 text-sage" : "bg-ink/10 text-ink/50"
-            }`}
-          >
-            {patient.active ? "Activo" : "Inactivo"}
-          </span>
+          <div className="flex items-center gap-3">
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                patient.active ? "bg-sage/15 text-sage" : "bg-ink/10 text-ink/50"
+              }`}
+            >
+              {patient.active ? "Activo" : "Inactivo"}
+            </span>
+            <PrintExportRecordButton
+              data={{
+                patient,
+                clinicalRecord: clinicalRecord ?? null,
+                consultations: consultations ?? [],
+                diagnoses: diagnoses ?? [],
+                prescriptions: prescriptions ?? [],
+              }}
+            />
+          </div>
         </div>
 
         <div className="mt-4 grid gap-x-6 gap-y-2 text-sm text-ink/70 sm:grid-cols-3">

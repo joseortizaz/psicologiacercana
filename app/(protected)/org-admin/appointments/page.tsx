@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AppointmentStatusButtons } from "@/components/AppointmentStatusButtons";
-import type { Clinic } from "@/lib/types";
+import { ImportAppointmentsCsv } from "@/components/ImportAppointmentsCsv";
+import { ExportCsvButton } from "@/components/ExportCsvButton";
+import type { Clinic, Profile } from "@/lib/types";
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: "Agendada",
@@ -23,6 +25,16 @@ export default async function OrgAdminAppointmentsPage({
   searchParams: { clinic?: string };
 }) {
   const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, organization_id, clinic_id")
+    .eq("id", user!.id)
+    .single<Profile>();
 
   const clinicFilter = searchParams.clinic;
 
@@ -52,6 +64,19 @@ export default async function OrgAdminAppointmentsPage({
 
   const clinicNameById = new Map((clinics ?? []).map((c) => [c.id, c.name]));
 
+  const exportRows = (appointments ?? []).map((a) => {
+    const patient = Array.isArray(a.patient) ? a.patient[0] : a.patient;
+    const therapist = Array.isArray(a.therapist) ? a.therapist[0] : a.therapist;
+    return {
+      start_time: new Date(a.start_time).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }),
+      patient: patient?.full_name ?? "",
+      clinic: clinicNameById.get(a.clinic_id) ?? "",
+      therapist: therapist?.full_name ?? "",
+      modality: MODALITY_LABELS[a.modality] ?? a.modality,
+      status: STATUS_LABELS[a.status] ?? a.status,
+    };
+  });
+
   const groups = new Map<string, typeof appointments>();
   for (const appt of appointments ?? []) {
     const dayKey = new Date(appt.start_time).toLocaleDateString("es-MX", {
@@ -66,7 +91,30 @@ export default async function OrgAdminAppointmentsPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="font-display text-2xl text-deep">Citas</p>
+      <div className="flex items-center justify-between">
+        <p className="font-display text-2xl text-deep">Citas</p>
+        <div className="flex gap-3">
+          <ExportCsvButton
+            rows={exportRows}
+            columns={[
+              { key: "start_time", label: "Fecha y hora" },
+              { key: "patient", label: "Paciente" },
+              { key: "clinic", label: "Sucursal" },
+              { key: "therapist", label: "Terapeuta" },
+              { key: "modality", label: "Modalidad" },
+              { key: "status", label: "Estado" },
+            ]}
+            filename="citas.csv"
+            auditTable="appointments"
+          />
+          {clinics && clinics.length > 0 && (
+            <ImportAppointmentsCsv
+              organizationId={profile!.organization_id!}
+              assignableClinics={clinics.map((c) => ({ id: c.id, name: c.name }))}
+            />
+          )}
+        </div>
+      </div>
 
       {clinics && clinics.length > 0 && (
         <div className="flex flex-wrap gap-2">

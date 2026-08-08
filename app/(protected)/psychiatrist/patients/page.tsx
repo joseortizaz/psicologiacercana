@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { ExportCsvButton } from "@/components/ExportCsvButton";
+
+const PATIENT_EXPORT_COLUMNS: { key: "full_name" | "category" | "active"; label: string }[] = [
+  { key: "full_name", label: "Nombre" },
+  { key: "category", label: "Categoría" },
+  { key: "active", label: "Activo" },
+];
 
 const CATEGORY_LABELS: Record<string, string> = {
   child: "Niño/a",
@@ -44,7 +51,15 @@ export default async function PsychiatristPatientsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="font-display text-2xl text-deep">Pacientes</p>
+      <div className="flex items-center justify-between">
+        <p className="font-display text-2xl text-deep">Pacientes</p>
+        <ExportCsvButton
+          rows={patients}
+          columns={PATIENT_EXPORT_COLUMNS}
+          filename="pacientes.csv"
+          auditTable="patients"
+        />
+      </div>
 
       {patients.length > 0 ? (
         <div className="overflow-hidden rounded-lg border border-line bg-white/60">

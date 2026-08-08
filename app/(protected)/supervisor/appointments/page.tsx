@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { ExportCsvButton } from "@/components/ExportCsvButton";
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: "Agendada",
@@ -26,6 +27,18 @@ export default async function SupervisorAppointmentsPage() {
     )
     .order("start_time", { ascending: true });
 
+  const exportRows = (appointments ?? []).map((a) => {
+    const patient = Array.isArray(a.patient) ? a.patient[0] : a.patient;
+    const therapist = Array.isArray(a.therapist) ? a.therapist[0] : a.therapist;
+    return {
+      start_time: new Date(a.start_time).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }),
+      patient: patient?.full_name ?? "",
+      therapist: therapist?.full_name ?? "",
+      modality: MODALITY_LABELS[a.modality] ?? a.modality,
+      status: STATUS_LABELS[a.status] ?? a.status,
+    };
+  });
+
   const groups = new Map<string, typeof appointments>();
   for (const appt of appointments ?? []) {
     const dayKey = new Date(appt.start_time).toLocaleDateString("es-MX", {
@@ -40,8 +53,24 @@ export default async function SupervisorAppointmentsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="font-display text-2xl text-deep">Citas de la clínica</p>
-      <p className="-mt-4 text-sm text-ink/50">Vista de solo lectura.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-display text-2xl text-deep">Citas de la clínica</p>
+          <p className="mt-1 text-sm text-ink/50">Vista de solo lectura.</p>
+        </div>
+        <ExportCsvButton
+          rows={exportRows}
+          columns={[
+            { key: "start_time", label: "Fecha y hora" },
+            { key: "patient", label: "Paciente" },
+            { key: "therapist", label: "Terapeuta" },
+            { key: "modality", label: "Modalidad" },
+            { key: "status", label: "Estado" },
+          ]}
+          filename="citas.csv"
+          auditTable="appointments"
+        />
+      </div>
 
       {groups.size > 0 ? (
         <div className="flex flex-col gap-6">

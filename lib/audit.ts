@@ -6,6 +6,9 @@ export const AUDIT_TABLE_LABELS: Record<string, string> = {
   appointments: "Citas",
   consultations: "Consultas",
   consents: "Consentimientos",
+  patient_diagnoses: "Diagnósticos",
+  prescription_records: "Recetas",
+  audit_logs: "Auditoría",
 };
 
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
@@ -13,6 +16,9 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   UPDATE: "Actualización",
   DELETE: "Eliminación",
   SELECT: "Acceso elevado",
+  PRINT: "Impresión",
+  EXPORT_PDF: "Exportación PDF",
+  EXPORT_CSV: "Exportación CSV",
 };
 
 export const AUDIT_ACTION_BADGE_CLASSES: Record<string, string> = {
@@ -20,6 +26,9 @@ export const AUDIT_ACTION_BADGE_CLASSES: Record<string, string> = {
   UPDATE: "bg-amber-500/15 text-amber-700",
   DELETE: "bg-red-500/15 text-red-700",
   SELECT: "bg-clay/15 text-clay",
+  PRINT: "bg-deep/10 text-deep",
+  EXPORT_PDF: "bg-deep/10 text-deep",
+  EXPORT_CSV: "bg-deep/10 text-deep",
 };
 
 export interface AuditLogEntry {

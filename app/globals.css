@@ -40,3 +40,29 @@ body {
 .legal-content a {
   @apply underline decoration-ink/20 underline-offset-2 hover:text-deep;
 }
+
+/* Área imprimible del expediente clínico (ver components/PrintExportRecordButton.tsx).
+   Se mantiene fuera de la vista en pantalla y solo se revela al imprimir,
+   usando el truco clásico de ocultar todo el body salvo este contenedor. */
+#print-record-area {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 800px;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-record-area,
+  #print-record-area * {
+    visibility: visible;
+  }
+  #print-record-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}

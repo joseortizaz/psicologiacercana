@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ScheduleAppointmentForm } from "@/components/ScheduleAppointmentForm";
 import { AppointmentStatusButtons } from "@/components/AppointmentStatusButtons";
+import { AdminPrintExportRecordButton } from "@/components/PrintExportRecordButton";
 import type { Appointment, Patient } from "@/lib/types";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -80,13 +81,16 @@ export default async function OrgAdminPatientDetailPage({ params }: { params: { 
             <p className="font-display text-2xl text-deep">{patient.full_name}</p>
             {clinic?.name && <p className="mt-1 text-sm text-ink/50">{clinic.name}</p>}
           </div>
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-              patient.active ? "bg-sage/15 text-sage" : "bg-ink/10 text-ink/50"
-            }`}
-          >
-            {patient.active ? "Activo" : "Inactivo"}
-          </span>
+          <div className="flex items-center gap-3">
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                patient.active ? "bg-sage/15 text-sage" : "bg-ink/10 text-ink/50"
+              }`}
+            >
+              {patient.active ? "Activo" : "Inactivo"}
+            </span>
+            <AdminPrintExportRecordButton patient={patient} />
+          </div>
         </div>
 
         <div className="mt-4 grid gap-x-6 gap-y-2 text-sm text-ink/70 sm:grid-cols-3">

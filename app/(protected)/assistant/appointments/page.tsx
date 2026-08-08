@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AppointmentStatusButtons } from "@/components/AppointmentStatusButtons";
+import { ImportAppointmentsCsv } from "@/components/ImportAppointmentsCsv";
+import { ExportCsvButton } from "@/components/ExportCsvButton";
+import type { Profile } from "@/lib/types";
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: "Agendada",
@@ -19,6 +22,16 @@ const MODALITY_LABELS: Record<string, string> = {
 export default async function AssistantAppointmentsPage() {
   const supabase = createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, organization_id, clinic_id")
+    .eq("id", user!.id)
+    .single<Profile>();
+
   // RLS limita esto a las citas de la clínica del usuario autenticado.
   const { data: appointments } = await supabase
     .from("appointments")
@@ -26,6 +39,18 @@ export default async function AssistantAppointmentsPage() {
       "id, start_time, end_time, modality, status, patient:patients(id, full_name), therapist:profiles!appointments_therapist_id_fkey(full_name)",
     )
     .order("start_time", { ascending: true });
+
+  const exportRows = (appointments ?? []).map((a) => {
+    const patient = Array.isArray(a.patient) ? a.patient[0] : a.patient;
+    const therapist = Array.isArray(a.therapist) ? a.therapist[0] : a.therapist;
+    return {
+      start_time: new Date(a.start_time).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }),
+      patient: patient?.full_name ?? "",
+      therapist: therapist?.full_name ?? "",
+      modality: MODALITY_LABELS[a.modality] ?? a.modality,
+      status: STATUS_LABELS[a.status] ?? a.status,
+    };
+  });
 
   const groups = new Map<string, typeof appointments>();
   for (const appt of appointments ?? []) {
@@ -41,7 +66,27 @@ export default async function AssistantAppointmentsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="font-display text-2xl text-deep">Citas de la clínica</p>
+      <div className="flex items-center justify-between">
+        <p className="font-display text-2xl text-deep">Citas de la clínica</p>
+        <div className="flex gap-3">
+          <ExportCsvButton
+            rows={exportRows}
+            columns={[
+              { key: "start_time", label: "Fecha y hora" },
+              { key: "patient", label: "Paciente" },
+              { key: "therapist", label: "Terapeuta" },
+              { key: "modality", label: "Modalidad" },
+              { key: "status", label: "Estado" },
+            ]}
+            filename="citas.csv"
+            auditTable="appointments"
+          />
+          <ImportAppointmentsCsv
+            organizationId={profile!.organization_id!}
+            clinicId={profile!.clinic_id!}
+          />
+        </div>
+      </div>
 
       {groups.size > 0 ? (
         <div className="flex flex-col gap-6">

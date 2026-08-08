@@ -1,6 +1,25 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { ExportCsvButton } from "@/components/ExportCsvButton";
 import type { Patient } from "@/lib/types";
+
+interface PatientExportRow {
+  full_name: string;
+  category: string;
+  therapist: string;
+  contact_email: string;
+  contact_phone: string;
+  active: string;
+}
+
+const PATIENT_EXPORT_COLUMNS: { key: keyof PatientExportRow; label: string }[] = [
+  { key: "full_name", label: "Nombre" },
+  { key: "category", label: "Categoría" },
+  { key: "therapist", label: "Terapeuta" },
+  { key: "contact_email", label: "Correo" },
+  { key: "contact_phone", label: "Teléfono" },
+  { key: "active", label: "Activo" },
+];
 
 const CATEGORY_LABELS: Record<string, string> = {
   child: "Niño/a",
@@ -26,10 +45,31 @@ export default async function SupervisorPatientsPage() {
 
   const therapistNameById = new Map((therapists ?? []).map((t) => [t.id, t.full_name]));
 
+  const exportRows = (patients ?? []).map((p) => ({
+    full_name: p.full_name,
+    category: CATEGORY_LABELS[p.category] ?? p.category,
+    therapist: p.primary_therapist_id
+      ? (therapistNameById.get(p.primary_therapist_id) ?? "")
+      : "Sin asignar",
+    contact_email: p.contact_email ?? "",
+    contact_phone: p.contact_phone ?? "",
+    active: p.active ? "Sí" : "No",
+  }));
+
   return (
     <div className="flex flex-col gap-6">
-      <p className="font-display text-2xl text-deep">Pacientes de la clínica</p>
-      <p className="-mt-4 text-sm text-ink/50">Vista de solo lectura.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-display text-2xl text-deep">Pacientes de la clínica</p>
+          <p className="mt-1 text-sm text-ink/50">Vista de solo lectura.</p>
+        </div>
+        <ExportCsvButton
+          rows={exportRows}
+          columns={PATIENT_EXPORT_COLUMNS}
+          filename="pacientes.csv"
+          auditTable="patients"
+        />
+      </div>
 
       {patients && patients.length > 0 ? (
         <div className="overflow-hidden rounded-lg border border-line bg-white/60">
