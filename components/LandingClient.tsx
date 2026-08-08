@@ -422,7 +422,7 @@ const LANDING_HTML = `
         <ul>
           <li><a href="#">Blog</a></li>
           <li><a href="#">Guías</a></li>
-          <li><a href="#">Preguntas frecuentes</a></li>
+          <li><a href="/preguntas-frecuentes">Preguntas frecuentes</a></li>
           <li><a href="#">Webinars</a></li>
         </ul>
       </div>
