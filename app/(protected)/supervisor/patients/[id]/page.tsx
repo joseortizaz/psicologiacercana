@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { DiagnosesList } from "@/components/DiagnosesList";
+import { PrescriptionsList } from "@/components/PrescriptionsList";
 import type {
   Appointment,
   ClinicalHistorySections,
@@ -8,6 +10,8 @@ import type {
   ClinicalSensitiveHistory,
   Consultation,
   Patient,
+  PatientDiagnosis,
+  PrescriptionRecord,
 } from "@/lib/types";
 
 const HISTORY_SECTION_FIELDS: { key: keyof ClinicalHistorySections; label: string }[] = [
@@ -110,6 +114,27 @@ export default async function SupervisorPatientDetailPage({
         .order("session_date", { ascending: false })
         .returns<(Consultation & { therapist: { full_name: string } | { full_name: string }[] | null })[]>()
     : { data: [] as (Consultation & { therapist: { full_name: string } | { full_name: string }[] | null })[] };
+
+  const [{ data: diagnoses }, { data: prescriptions }] = clinicalRecord
+    ? await Promise.all([
+        supabase
+          .from("patient_diagnoses")
+          .select(
+            "id, organization_id, clinic_id, patient_id, clinical_record_id, diagnosis_code_id, type, status, diagnosed_by, diagnosed_at, notes, created_at, updated_at, diagnosis_code:diagnosis_codes(code, title), diagnosed_by_profile:profiles!patient_diagnoses_diagnosed_by_fkey(full_name)",
+          )
+          .eq("clinical_record_id", clinicalRecord.id)
+          .order("diagnosed_at", { ascending: false })
+          .returns<PatientDiagnosis[]>(),
+        supabase
+          .from("prescription_records")
+          .select(
+            "id, organization_id, clinic_id, patient_id, clinical_record_id, prescribing_clinician_id, issued_at, diagnosis_id, notes, created_at, updated_at, prescribing_clinician:profiles!prescription_records_prescribing_clinician_id_fkey(full_name), items:prescription_items(id, organization_id, clinic_id, clinical_record_id, prescription_record_id, medication_name, dosage, frequency, duration, instructions, is_controlled, created_at, updated_at)",
+          )
+          .eq("clinical_record_id", clinicalRecord.id)
+          .order("issued_at", { ascending: false })
+          .returns<PrescriptionRecord[]>(),
+      ])
+    : [{ data: [] as PatientDiagnosis[] }, { data: [] as PrescriptionRecord[] }];
 
   return (
     <div className="flex flex-col gap-8">
@@ -379,6 +404,20 @@ export default async function SupervisorPatientDetailPage({
           <p className="text-sm text-ink/50">Todavía no hay notas de sesión.</p>
         )}
       </section>
+
+      {clinicalRecord && (
+        <>
+          <section className="flex flex-col gap-4">
+            <p className="font-display text-xl text-deep">Diagnósticos</p>
+            <DiagnosesList diagnoses={diagnoses ?? []} />
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <p className="font-display text-xl text-deep">Recetas</p>
+            <PrescriptionsList records={prescriptions ?? []} />
+          </section>
+        </>
+      )}
     </div>
   );
 }

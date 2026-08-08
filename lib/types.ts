@@ -244,3 +244,69 @@ export interface Consultation {
   created_at: string;
   updated_at: string;
 }
+
+// ----------------------------------------------------------------------------
+// Módulo de psiquiatría — Fases 4-5 (diagnósticos CIE-11 y recetas históricas)
+// ----------------------------------------------------------------------------
+
+export type DiagnosisType = "principal" | "secundario";
+export type DiagnosisStatus = "activo" | "en_remisión" | "descartado";
+
+export interface DiagnosisCode {
+  id: string;
+  system: string;
+  code: string;
+  title: string;
+  parent_code: string | null;
+  active: boolean;
+}
+
+export interface PatientDiagnosis {
+  id: string;
+  organization_id: string;
+  clinic_id: string;
+  patient_id: string;
+  clinical_record_id: string;
+  diagnosis_code_id: string;
+  type: DiagnosisType;
+  status: DiagnosisStatus;
+  diagnosed_by: string | null;
+  diagnosed_at: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  diagnosis_code?: Pick<DiagnosisCode, "code" | "title"> | null;
+  diagnosed_by_profile?: Pick<Profile, "full_name"> | null;
+}
+
+export interface PrescriptionItem {
+  id: string;
+  organization_id: string;
+  clinic_id: string;
+  clinical_record_id: string;
+  prescription_record_id: string;
+  medication_name: string;
+  dosage: string;
+  frequency: string;
+  duration: string | null;
+  instructions: string | null;
+  is_controlled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PrescriptionRecord {
+  id: string;
+  organization_id: string;
+  clinic_id: string;
+  patient_id: string;
+  clinical_record_id: string;
+  prescribing_clinician_id: string;
+  issued_at: string;
+  diagnosis_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  prescribing_clinician?: Pick<Profile, "full_name"> | null;
+  items?: PrescriptionItem[];
+}
