@@ -36,7 +36,13 @@
 //     visited: number,         // entidades de la OMS consultadas en esta corrida
 //     truncated: boolean,      // true si se llegó a maxNodes/maxDepth/tiempo
 //     pendingBranches: string[], // URIs no procesados (pasar como rootUri para continuar)
-//     elapsedMs: number
+//     elapsedMs: number,
+//     languageRequested: string,
+//     languageProbe: {           // diagnóstico: qué devolvió la OMS para chapterUri
+//       requested: { status, contentLanguage, title },      // pidiendo `language`
+//       englishExplicit: { status, contentLanguage, title } // pidiendo "en" a propósito
+//     },
+//     sampleTitles: { code, title }[] // primeras 8 filas guardadas, para inspección rápida
 //   }
 //
 // NOTA IMPORTANTE: este código se escribió a partir de la documentación
@@ -123,6 +129,32 @@ async function fetchWhoEntity(uri: string, token: string, language: string): Pro
     throw err;
   }
   return (await res.json()) as WhoEntity;
+}
+
+// Diagnóstico: hace una consulta cruda a `uri` en `language` y devuelve el
+// header `Content-Language` que haya respondido la OMS junto con el título
+// obtenido, sin usar el fallback. Sirve para confirmar si la OMS realmente
+// está sirviendo el idioma pedido o si calla y devuelve inglés igual (200
+// en vez de 404) — algo que fetchWhoEntity no puede distinguir por sí solo.
+async function probeLanguage(
+  uri: string,
+  token: string,
+  language: string,
+): Promise<{ status: number; contentLanguage: string | null; title: string | null }> {
+  const res = await fetch(uri, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      "Accept-Language": language,
+      "API-Version": "v2",
+    },
+  });
+  const contentLanguage = res.headers.get("content-language");
+  if (!res.ok) {
+    return { status: res.status, contentLanguage, title: null };
+  }
+  const body = (await res.json()) as WhoEntity;
+  return { status: res.status, contentLanguage, title: body.title?.["@value"] ?? null };
 }
 
 // No todas las entidades de la OMS tienen traducción a todos los idiomas
@@ -316,6 +348,13 @@ Deno.serve(async (req: Request) => {
       chapterTitle = startEntity.title?.["@value"] ?? "(sin título)";
     }
 
+    // Diagnóstico puntual (no afecta la sincronización): compara qué devuelve
+    // la OMS para esta misma entidad pidiendo `language` vs "en" explícito.
+    const languageProbe = {
+      requested: await probeLanguage(chapterUri, token, language),
+      englishExplicit: await probeLanguage(chapterUri, token, "en"),
+    };
+
     // BFS acotado por maxNodes, maxDepth y un presupuesto de tiempo. `codeByUri`
     // guarda el `code` ya resuelto de cada entidad visitada para poder rellenar
     // `parent_code` de sus hijos sin tener que re-consultar al padre.
@@ -402,6 +441,9 @@ Deno.serve(async (req: Request) => {
         truncated,
         pendingBranches,
         elapsedMs: Date.now() - startedAt,
+        languageRequested: language,
+        languageProbe,
+        sampleTitles: rows.slice(0, 8).map((r) => ({ code: r.code, title: r.title })),
       },
       200,
     );
