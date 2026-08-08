@@ -17,7 +17,7 @@
 --      USING).
 
 begin;
-select plan(14);
+select plan(15);
 
 select tests.authenticate_as_service_role();
 
@@ -222,16 +222,27 @@ select is(
 );
 
 -- ---------------------------------------------------------------
--- Caso 13: DELETE siempre bloqueado -- sin policy, falla en silencio.
+-- Caso 13: DELETE siempre bloqueado. Storage instala su propio trigger
+-- storage.protect_delete() sobre storage.objects, que lanza una excepción
+-- ante CUALQUIER DELETE directo (sin pasar por la Storage API) -- ni
+-- siquiera llega a evaluarse la falta de policy de DELETE de esta suite.
 -- ---------------------------------------------------------------
 select tests.authenticate_as('evs_therapist');
-delete from storage.objects where bucket_id = 'evaluation-reports' and name = :'obj_path';
+select throws_ok(
+  format(
+    $$ delete from storage.objects where bucket_id = 'evaluation-reports' and name = '%s' $$,
+    :'obj_path'
+  ),
+  'P0001',
+  null,
+  'Caso 13: DELETE está siempre bloqueado, incluso para quien subió el archivo (storage.protect_delete())'
+);
 
 select tests.authenticate_as_service_role();
 select is(
   (select count(*)::int from storage.objects where bucket_id = 'evaluation-reports' and name = :'obj_path'),
   1,
-  'Caso 13: DELETE está siempre bloqueado, incluso para quien subió el archivo -- sigue existiendo tras el intento'
+  'Caso 13b: el archivo sigue existiendo tras el intento de DELETE'
 );
 
 select * from finish();
