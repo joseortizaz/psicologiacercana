@@ -310,3 +310,29 @@ export interface PrescriptionRecord {
   prescribing_clinician?: Pick<Profile, "full_name"> | null;
   items?: PrescriptionItem[];
 }
+
+// ----------------------------------------------------------------------------
+// Formulario de contacto de la landing page (CTA del Plan Institucional).
+// ----------------------------------------------------------------------------
+
+export type ContactRequestPlanInterest =
+  | "esencial"
+  | "duo_clinico"
+  | "profesional_plus"
+  | "clinica_crecimiento"
+  | "institucional"
+  | "otro";
+
+export type ContactRequestStatus = "new" | "contacted" | "closed";
+
+export interface ContactRequest {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  message: string;
+  plan_interest: ContactRequestPlanInterest;
+  status: ContactRequestStatus;
+  created_at: string;
+  updated_at: string;
+}
