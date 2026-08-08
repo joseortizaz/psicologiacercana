@@ -23,7 +23,9 @@
 //     // invocación puede no alcanzar a recorrerlo entero).
 //     "maxNodes": 500,      // tope de entidades a procesar en esta corrida
 //     "maxDepth": 8,        // profundidad máxima desde rootUri
-//     "language": "en"      // Accept-Language pedido a la API de la OMS (default "en")
+//     "language": "es"      // Accept-Language pedido a la API de la OMS (default "es";
+//                           // si una entidad puntual no tiene traducción, se reintenta
+//                           // automáticamente en inglés solo para esa entidad)
 //   }
 //
 // Respuesta 200:
@@ -116,9 +118,37 @@ async function fetchWhoEntity(uri: string, token: string, language: string): Pro
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`Error consultando ${uri} (${res.status}): ${body}`);
+    const err = new Error(`Error consultando ${uri} (${res.status}): ${body}`);
+    (err as Error & { status?: number }).status = res.status;
+    throw err;
   }
   return (await res.json()) as WhoEntity;
+}
+
+// No todas las entidades de la OMS tienen traducción a todos los idiomas
+// (confirmado en vivo: pedir "es" contra una entidad sin esa traducción
+// devuelve 404 "Not available in the requested language"). Para poder pedir
+// español sin que la sincronización se caiga entera, cada entidad se intenta
+// primero en `preferredLanguage` y, si la OMS responde 404, se reintenta en
+// `fallbackLanguage` (esa entidad queda guardada en el idioma de respaldo,
+// el resto del árbol no se ve afectado).
+async function fetchWhoEntityLocalized(
+  uri: string,
+  token: string,
+  preferredLanguage: string,
+  fallbackLanguage: string,
+): Promise<WhoEntity> {
+  if (preferredLanguage === fallbackLanguage) {
+    return await fetchWhoEntity(uri, token, preferredLanguage);
+  }
+  try {
+    return await fetchWhoEntity(uri, token, preferredLanguage);
+  } catch (err) {
+    if ((err as Error & { status?: number }).status === 404) {
+      return await fetchWhoEntity(uri, token, fallbackLanguage);
+    }
+    throw err;
+  }
 }
 
 // Resuelve la entidad raíz de la linearización MMS. La API de la OMS puede
@@ -126,8 +156,17 @@ async function fetchWhoEntity(uri: string, token: string, language: string): Pro
 //   (a) directamente la entidad raíz (con `child`), o
 //   (b) un índice de releases (`release: [...]`) del que hay que tomar el
 //       más reciente y volver a consultar.
-async function resolveMmsRoot(token: string, language: string): Promise<WhoEntity> {
-  const first = await fetchWhoEntity(MMS_ROOT_URL, token, language);
+// La navegación estructural (encontrar la raíz MMS vigente y el capítulo 06)
+// siempre se hace en inglés, sin importar el idioma pedido para el resto de
+// la sincronización: CHAPTER_TITLE_MATCH busca el título en inglés, y no
+// todos los releases tienen traducción (pedir "es" aquí fue justamente lo
+// que devolvió el 404 "Not available in the requested language" en la
+// primera corrida real). El idioma de los títulos que se guardan en
+// diagnosis_codes se resuelve aparte, por entidad, en el BFS de más abajo.
+const STRUCTURAL_LANGUAGE = "en";
+
+async function resolveMmsRoot(token: string): Promise<WhoEntity> {
+  const first = await fetchWhoEntity(MMS_ROOT_URL, token, STRUCTURAL_LANGUAGE);
   if (Array.isArray(first.child) && first.child.length > 0) {
     return first;
   }
@@ -138,7 +177,7 @@ async function resolveMmsRoot(token: string, language: string): Promise<WhoEntit
     // vigente; el último llegó a ser 2018, anterior a la publicación oficial
     // de la CIE-11 en 2019) — NO al revés como se asumió originalmente.
     const latestUri = releases[0];
-    return await fetchWhoEntity(latestUri, token, language);
+    return await fetchWhoEntity(latestUri, token, STRUCTURAL_LANGUAGE);
   }
   throw new Error(
     "No se pudo interpretar la respuesta de /icd/release/11/mms (ni 'child' ni 'release' presentes)",
@@ -148,10 +187,9 @@ async function resolveMmsRoot(token: string, language: string): Promise<WhoEntit
 async function findChapter06(
   root: WhoEntity,
   token: string,
-  language: string,
 ): Promise<{ uri: string; entity: WhoEntity }> {
   for (const childUri of root.child ?? []) {
-    const child = await fetchWhoEntity(childUri, token, language);
+    const child = await fetchWhoEntity(childUri, token, STRUCTURAL_LANGUAGE);
     const title = child.title?.["@value"] ?? "";
     if (CHAPTER_TITLE_MATCH.test(title)) {
       return { uri: childUri, entity: child };
@@ -245,13 +283,15 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Body inválido, se esperaba JSON" }, 400);
   }
 
-  // "en" por defecto: confirmado en vivo (2026-08-08) que no todos los
-  // releases/entidades de la OMS tienen traducción a otros idiomas (un
-  // intento con "es" contra un release sin esa traducción devuelve 404
-  // "Not available in the requested language"). Además CHAPTER_TITLE_MATCH
-  // busca el título del capítulo en inglés. Se puede pedir otro idioma
-  // explícitamente vía payload.language a riesgo de que falte traducción.
-  const language = payload.language?.trim() || "en";
+  // "es" por defecto: los títulos guardados en diagnosis_codes se piden en
+  // este idioma. La navegación estructural (raíz MMS, capítulo 06) siempre
+  // usa inglés internamente (ver STRUCTURAL_LANGUAGE) así que no le afecta
+  // este valor. Cuando una entidad puntual no tiene traducción a `language`,
+  // fetchWhoEntityLocalized reintenta automáticamente en `fallbackLanguage`
+  // en vez de fallar toda la corrida (confirmado en vivo 2026-08-08: no
+  // todas las entidades de la OMS tienen traducción a todos los idiomas).
+  const language = payload.language?.trim() || "es";
+  const fallbackLanguage = "en";
   const maxNodes = payload.maxNodes && payload.maxNodes > 0 ? payload.maxNodes : DEFAULT_MAX_NODES;
   const maxDepth = payload.maxDepth && payload.maxDepth > 0 ? payload.maxDepth : DEFAULT_MAX_DEPTH;
 
@@ -266,13 +306,13 @@ Deno.serve(async (req: Request) => {
 
     if (payload.rootUri) {
       chapterUri = payload.rootUri;
-      startEntity = await fetchWhoEntity(chapterUri, token, language);
+      startEntity = await fetchWhoEntityLocalized(chapterUri, token, language, fallbackLanguage);
       chapterTitle = startEntity.title?.["@value"] ?? "(sin título)";
     } else {
-      const root = await resolveMmsRoot(token, language);
-      const chapter = await findChapter06(root, token, language);
+      const root = await resolveMmsRoot(token);
+      const chapter = await findChapter06(root, token);
       chapterUri = chapter.uri;
-      startEntity = chapter.entity;
+      startEntity = await fetchWhoEntityLocalized(chapter.uri, token, language, fallbackLanguage);
       chapterTitle = startEntity.title?.["@value"] ?? "(sin título)";
     }
 
@@ -326,7 +366,7 @@ Deno.serve(async (req: Request) => {
 
         const fetchedChildren = await mapWithConcurrency(children, CONCURRENCY, async (childUri) => {
           visited.add(childUri);
-          const childEntity = await fetchWhoEntity(childUri, token, language);
+          const childEntity = await fetchWhoEntityLocalized(childUri, token, language, fallbackLanguage);
           return { uri: childUri, entity: childEntity, depth: depth + 1 };
         });
         queue.push(...fetchedChildren);
