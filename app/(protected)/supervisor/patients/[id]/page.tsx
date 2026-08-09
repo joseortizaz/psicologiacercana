@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DiagnosesList } from "@/components/DiagnosesList";
 import { PrescriptionsList } from "@/components/PrescriptionsList";
+import { EvaluationsList } from "@/components/EvaluationsList";
 import { PrintExportRecordButton } from "@/components/PrintExportRecordButton";
 import type {
   Appointment,
@@ -10,6 +11,7 @@ import type {
   ClinicalRecord,
   ClinicalSensitiveHistory,
   Consultation,
+  EvaluationReport,
   Patient,
   PatientDiagnosis,
   PrescriptionRecord,
@@ -116,7 +118,7 @@ export default async function SupervisorPatientDetailPage({
         .returns<(Consultation & { therapist: { full_name: string } | { full_name: string }[] | null })[]>()
     : { data: [] as (Consultation & { therapist: { full_name: string } | { full_name: string }[] | null })[] };
 
-  const [{ data: diagnoses }, { data: prescriptions }] = clinicalRecord
+  const [{ data: diagnoses }, { data: prescriptions }, { data: evaluations }] = clinicalRecord
     ? await Promise.all([
         supabase
           .from("patient_diagnoses")
@@ -134,8 +136,20 @@ export default async function SupervisorPatientDetailPage({
           .eq("clinical_record_id", clinicalRecord.id)
           .order("issued_at", { ascending: false })
           .returns<PrescriptionRecord[]>(),
+        supabase
+          .from("evaluation_reports")
+          .select(
+            "id, organization_id, clinic_id, patient_id, clinical_record_id, administered_by, diagnosis_id, test_name, administered_at, score_summary, interpretation, attachment_path, status, finalized_at, created_by, created_at, updated_at, administered_by_profile:profiles!evaluation_reports_administered_by_fkey(full_name, role), diagnosis:patient_diagnoses!evaluation_reports_diagnosis_id_fkey(diagnosis_code:diagnosis_codes(code, title))",
+          )
+          .eq("clinical_record_id", clinicalRecord.id)
+          .order("administered_at", { ascending: false })
+          .returns<EvaluationReport[]>(),
       ])
-    : [{ data: [] as PatientDiagnosis[] }, { data: [] as PrescriptionRecord[] }];
+    : [
+        { data: [] as PatientDiagnosis[] },
+        { data: [] as PrescriptionRecord[] },
+        { data: [] as EvaluationReport[] },
+      ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -427,6 +441,11 @@ export default async function SupervisorPatientDetailPage({
           <section className="flex flex-col gap-4">
             <p className="font-display text-xl text-deep">Recetas</p>
             <PrescriptionsList records={prescriptions ?? []} />
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <p className="font-display text-xl text-deep">Evaluaciones</p>
+            <EvaluationsList evaluations={evaluations ?? []} />
           </section>
         </>
       )}

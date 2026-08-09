@@ -8,6 +8,7 @@ export const AUDIT_TABLE_LABELS: Record<string, string> = {
   consents: "Consentimientos",
   patient_diagnoses: "Diagnósticos",
   prescription_records: "Recetas",
+  evaluation_reports: "Evaluaciones",
   audit_logs: "Auditoría",
 };
 

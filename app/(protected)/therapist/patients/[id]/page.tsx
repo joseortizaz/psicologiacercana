@@ -8,6 +8,8 @@ import { AddConsultationForm } from "@/components/AddConsultationForm";
 import { TeamMembersPanel } from "@/components/TeamMembersPanel";
 import { DiagnosesList } from "@/components/DiagnosesList";
 import { PrescriptionsList } from "@/components/PrescriptionsList";
+import { AddEvaluationForm } from "@/components/AddEvaluationForm";
+import { EvaluationsList } from "@/components/EvaluationsList";
 import { PrintExportRecordButton } from "@/components/PrintExportRecordButton";
 import { CARE_TEAM_ROLES } from "@/lib/roles";
 import type {
@@ -15,6 +17,7 @@ import type {
   ClinicalRecord,
   ClinicalRecordTeamMember,
   Consultation,
+  EvaluationReport,
   Patient,
   PatientDiagnosis,
   PrescriptionRecord,
@@ -120,7 +123,7 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
   const teamMemberIds = new Set((teamMembers ?? []).map((m) => m.clinician_id));
   const teamCandidates = (clinicStaff ?? []).filter((s) => !teamMemberIds.has(s.id));
 
-  const [{ data: diagnoses }, { data: prescriptions }] = clinicalRecord
+  const [{ data: diagnoses }, { data: prescriptions }, { data: evaluations }] = clinicalRecord
     ? await Promise.all([
         supabase
           .from("patient_diagnoses")
@@ -138,8 +141,20 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
           .eq("clinical_record_id", clinicalRecord.id)
           .order("issued_at", { ascending: false })
           .returns<PrescriptionRecord[]>(),
+        supabase
+          .from("evaluation_reports")
+          .select(
+            "id, organization_id, clinic_id, patient_id, clinical_record_id, administered_by, diagnosis_id, test_name, administered_at, score_summary, interpretation, attachment_path, status, finalized_at, created_by, created_at, updated_at, administered_by_profile:profiles!evaluation_reports_administered_by_fkey(full_name, role), diagnosis:patient_diagnoses!evaluation_reports_diagnosis_id_fkey(diagnosis_code:diagnosis_codes(code, title))",
+          )
+          .eq("clinical_record_id", clinicalRecord.id)
+          .order("administered_at", { ascending: false })
+          .returns<EvaluationReport[]>(),
       ])
-    : [{ data: [] as PatientDiagnosis[] }, { data: [] as PrescriptionRecord[] }];
+    : [
+        { data: [] as PatientDiagnosis[] },
+        { data: [] as PrescriptionRecord[] },
+        { data: [] as EvaluationReport[] },
+      ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -382,6 +397,21 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
               Solo un psiquiatra miembro del equipo puede registrar recetas.
             </p>
             <PrescriptionsList records={prescriptions ?? []} />
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <p className="font-display text-xl text-deep">Evaluaciones</p>
+
+            <AddEvaluationForm
+              organizationId={patient.organization_id}
+              clinicId={patient.clinic_id}
+              patientId={patient.id}
+              clinicalRecordId={clinicalRecord.id}
+              administeredBy={user!.id}
+              diagnoses={diagnoses ?? []}
+            />
+
+            <EvaluationsList evaluations={evaluations ?? []} />
           </section>
         </>
       )}
