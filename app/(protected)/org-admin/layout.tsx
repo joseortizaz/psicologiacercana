@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { OrgAdminNav } from "@/components/OrgAdminNav";
+import { hasAdminAccess } from "@/lib/roles";
 
 export default async function OrgAdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
@@ -11,17 +12,20 @@ export default async function OrgAdminLayout({ children }: { children: React.Rea
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, is_org_admin")
     .eq("id", user!.id)
     .single();
 
-  if (profile?.role !== "org_admin") {
+  if (!profile || !hasAdminAccess(profile)) {
     redirect("/");
   }
 
+  const clinicalHomeHref =
+    profile.role === "therapist" ? "/therapist" : profile.role === "psychiatrist" ? "/psychiatrist" : undefined;
+
   return (
     <div className="flex flex-col gap-8">
-      <OrgAdminNav />
+      <OrgAdminNav clinicalHomeHref={clinicalHomeHref} />
       {children}
     </div>
   );

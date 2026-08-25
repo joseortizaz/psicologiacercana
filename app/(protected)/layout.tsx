@@ -16,7 +16,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, organization_id, clinic_id, role, full_name, email, active")
+    .select("id, organization_id, clinic_id, role, full_name, email, active, is_org_admin, must_change_password")
     .eq("id", user.id)
     .single<Profile>();
 
@@ -24,8 +24,17 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     redirect("/login");
   }
 
+  // Credenciales generadas por un administrador: cambio obligatorio antes
+  // de ver cualquier otra pantalla (ver plan-independientes-y-credenciales-
+  // cercana.md, sección B.3). /change-password vive fuera de este grupo de
+  // rutas, así que no hay riesgo de loop -- nunca vamos a estar "ya ahí"
+  // dentro de este layout.
+  if (profile.must_change_password) {
+    redirect("/change-password");
+  }
+
   return (
-    <AppShell fullName={profile.full_name} role={profile.role}>
+    <AppShell fullName={profile.full_name} role={profile.role} isOrgAdmin={profile.is_org_admin}>
       {children}
     </AppShell>
   );

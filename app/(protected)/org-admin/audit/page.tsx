@@ -7,6 +7,7 @@ import {
   AUDIT_TABLE_LABELS,
   type AuditLogEntry,
 } from "@/lib/audit";
+import { hasAdminAccess } from "@/lib/roles";
 
 const MAX_ROWS = 300;
 
@@ -23,11 +24,11 @@ export default async function OrgAdminAuditPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, is_org_admin")
     .eq("id", user!.id)
     .single();
 
-  if (profile?.role !== "org_admin") {
+  if (!profile || !hasAdminAccess(profile)) {
     redirect("/");
   }
 

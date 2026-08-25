@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EditStaffForm } from "@/components/EditStaffForm";
-import { ROLE_LABELS } from "@/lib/roles";
+import { ROLE_LABELS, hasAdminAccess } from "@/lib/roles";
 import type { Clinic, Profile } from "@/lib/types";
 
 export default async function EditStaffPage({ params }: { params: { id: string } }) {
@@ -14,11 +14,11 @@ export default async function EditStaffPage({ params }: { params: { id: string }
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, is_org_admin")
     .eq("id", user!.id)
     .single();
 
-  if (profile?.role !== "org_admin") {
+  if (!profile || !hasAdminAccess(profile)) {
     redirect("/");
   }
 
