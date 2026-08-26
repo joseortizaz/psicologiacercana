@@ -1,9 +1,27 @@
 // supabase/functions/invite-user/index.ts
 //
-// Un org_admin invita personal a SU propia organización; un super_admin
-// puede invitar a cualquier organización indicando organizationId.
-// Valida rol del solicitante, y que la clínica indicada (si aplica)
-// pertenezca a la organización destino.
+// Un org_admin (o cualquier usuario con capacidad administrativa --
+// role = 'org_admin' o is_org_admin = true, ver is_org_admin_or_super() en
+// la base de datos) invita personal a SU propia organización; un
+// super_admin puede invitar a cualquier organización indicando
+// organizationId. Valida rol del solicitante, y que la clínica indicada (si
+// aplica) pertenezca a la organización destino.
+//
+// Cambio respecto a la versión anterior (ver
+// plan-independientes-y-credenciales-cercana.md, sección B.2): en vez de
+// invitar por correo con inviteUserByEmail() -- la persona invitada elegía
+// su propia contraseña al hacer clic en el enlace --, ahora el
+// administrador crea el usuario con una contraseña temporal generada por el
+// sistema. Esa contraseña se devuelve UNA SOLA VEZ en la respuesta para que
+// el frontend la muestre al admin, quien la comparte por el canal que
+// prefiera (no necesariamente correo). El perfil nuevo queda con
+// must_change_password = true, así que la persona invitada queda forzada a
+// cambiarla en su primer login antes de ver cualquier otra pantalla de la
+// app (ver /change-password y app/(protected)/layout.tsx).
+//
+// El flujo de invitación por correo (inviteUserByEmail + /auth/confirm +
+// /set-password) NO se elimina del proyecto: sigue intacto para
+// onboard-organization. Solo se deja de usar aquí.
 //
 // Header requerido: Authorization: Bearer <access_token del solicitante>
 //
@@ -11,21 +29,35 @@
 //   {
 //     "email": "nuevo@ejemplo.com",
 //     "fullName": "Nombre Apellido",
-//     "role": "therapist" | "assistant" | "supervisor" | "org_admin",
-//     "clinicId": "uuid",           // requerido para therapist/assistant/supervisor
+//     "role": "therapist" | "assistant" | "supervisor" | "org_admin" | "psychiatrist",
+//     "clinicId": "uuid",           // requerido para roles clínicos/asistente/supervisor
 //     "organizationId": "uuid",     // solo si quien invita es super_admin
 //     "phone": "...",               // opcional
-//     "licenseNumber": "...",       // opcional, para terapeutas
-//     "specialty": "..."            // opcional, para terapeutas
+//     "licenseNumber": "...",       // opcional, para terapeutas/psiquiatras
+//     "specialty": "..."            // opcional, para terapeutas/psiquiatras
 //   }
 //
-// Respuesta 200: { userId, organizationId }
+// Respuesta 200: { userId, organizationId, temporaryPassword }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 
-const ALLOWED_ROLES = ["org_admin", "therapist", "assistant", "supervisor"] as const;
-const CLINIC_REQUIRED_ROLES = ["therapist", "assistant", "supervisor"];
+const ALLOWED_ROLES = ["org_admin", "therapist", "psychiatrist", "assistant", "supervisor"] as const;
+const CLINIC_REQUIRED_ROLES = ["therapist", "psychiatrist", "assistant", "supervisor"];
+
+// Alfabeto sin caracteres ambiguos (0/O, 1/l/I) -- la contraseña se va a
+// leer y transcribir a mano en más de un caso.
+const PASSWORD_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+
+function generateTemporaryPassword(length = 16): string {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    password += PASSWORD_ALPHABET[bytes[i] % PASSWORD_ALPHABET.length];
+  }
+  return password;
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -61,7 +93,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: callerProfile, error: callerProfileError } = await supabaseAdmin
     .from("profiles")
-    .select("role, organization_id, clinic_id, active")
+    .select("role, organization_id, clinic_id, active, is_org_admin")
     .eq("id", callerAuth.user.id)
     .single();
 
@@ -69,8 +101,14 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Perfil del solicitante no encontrado o inactivo" }, 403);
   }
 
-  if (!["org_admin", "super_admin"].includes(callerProfile.role)) {
-    return jsonResponse({ error: "Solo org_admin o super_admin pueden invitar usuarios" }, 403);
+  const callerHasAdminCapacity =
+    callerProfile.role === "org_admin" || callerProfile.role === "super_admin" || callerProfile.is_org_admin;
+
+  if (!callerHasAdminCapacity) {
+    return jsonResponse(
+      { error: "Solo un usuario con capacidad administrativa puede invitar personal" },
+      403,
+    );
   }
 
   // ---------------------------------------------------------------
@@ -105,16 +143,17 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: `El rol ${role} requiere clinicId` }, 400);
   }
 
-  // org_admin solo puede invitar dentro de su propia organización;
-  // super_admin debe indicar explícitamente a cuál organización.
+  // org_admin (o un is_org_admin) solo puede invitar dentro de su propia
+  // organización; super_admin debe indicar explícitamente a cuál
+  // organización.
   let targetOrgId: string;
-  if (callerProfile.role === "org_admin") {
-    targetOrgId = callerProfile.organization_id as string;
-  } else {
+  if (callerProfile.role === "super_admin") {
     if (!organizationId) {
       return jsonResponse({ error: "super_admin debe indicar organizationId" }, 400);
     }
     targetOrgId = organizationId;
+  } else {
+    targetOrgId = callerProfile.organization_id as string;
   }
 
   // Si se especificó clínica, confirmar que pertenece a la organización destino
@@ -132,22 +171,31 @@ Deno.serve(async (req: Request) => {
   }
 
   // ---------------------------------------------------------------
-  // 3. Crear el usuario de Auth (invitación por correo)
+  // 3. Crear el usuario de Auth con contraseña temporal generada por el
+  //    sistema -- ya no inviteUserByEmail(). email_confirm: true para que
+  //    pueda iniciar sesión de inmediato, sin esperar confirmación por
+  //    correo.
   // ---------------------------------------------------------------
-  const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin
-    .inviteUserByEmail(email, { data: { full_name: fullName } });
+  const temporaryPassword = generateTemporaryPassword();
 
-  if (inviteError || !inviteData?.user) {
+  const { data: createdUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password: temporaryPassword,
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
+  });
+
+  if (createError || !createdUser?.user) {
     return jsonResponse(
-      { error: `No se pudo invitar al usuario: ${inviteError?.message ?? "error desconocido"}` },
+      { error: `No se pudo crear el usuario: ${createError?.message ?? "error desconocido"}` },
       400,
     );
   }
 
-  const newUserId = inviteData.user.id;
+  const newUserId = createdUser.user.id;
 
   // ---------------------------------------------------------------
-  // 4. Crear el perfil
+  // 4. Crear el perfil, con must_change_password = true
   // ---------------------------------------------------------------
   const { error: profileError } = await supabaseAdmin.from("profiles").insert({
     id: newUserId,
@@ -160,6 +208,7 @@ Deno.serve(async (req: Request) => {
     license_number: licenseNumber ?? null,
     specialty: specialty ?? null,
     invited_by: callerAuth.user.id,
+    must_change_password: true,
   });
 
   if (profileError) {
@@ -167,5 +216,5 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: `No se pudo crear el perfil: ${profileError.message}` }, 400);
   }
 
-  return jsonResponse({ userId: newUserId, organizationId: targetOrgId }, 200);
+  return jsonResponse({ userId: newUserId, organizationId: targetOrgId, temporaryPassword }, 200);
 });

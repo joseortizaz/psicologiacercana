@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CreatePatientForm } from "@/components/CreatePatientForm";
 import { ImportPatientsCsv } from "@/components/ImportPatientsCsv";
 import { ExportCsvButton } from "@/components/ExportCsvButton";
+import { hasAdminAccess } from "@/lib/roles";
 import type { Clinic, Patient, Profile } from "@/lib/types";
 
 interface PatientExportRow {
@@ -47,11 +48,11 @@ export default async function OrgAdminPatientsPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, organization_id")
+    .select("role, organization_id, is_org_admin")
     .eq("id", user!.id)
     .single<Profile>();
 
-  if (profile?.role !== "org_admin") {
+  if (!profile || !hasAdminAccess(profile)) {
     redirect("/");
   }
 

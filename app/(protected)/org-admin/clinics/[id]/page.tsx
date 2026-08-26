@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EditClinicForm } from "@/components/EditClinicForm";
+import { hasAdminAccess } from "@/lib/roles";
 import type { Clinic } from "@/lib/types";
 
 export default async function EditClinicPage({ params }: { params: { id: string } }) {
@@ -13,11 +14,11 @@ export default async function EditClinicPage({ params }: { params: { id: string 
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, is_org_admin")
     .eq("id", user!.id)
     .single();
 
-  if (profile?.role !== "org_admin") {
+  if (!profile || !hasAdminAccess(profile)) {
     redirect("/");
   }
 

@@ -19,6 +19,17 @@ export interface Profile {
   avatar_url: string | null;
   active: boolean;
   invited_by: string | null;
+  // Bandera administrativa independiente del rol clínico -- ver
+  // plan-independientes-y-credenciales-cercana.md, sección A.1. Un
+  // therapist/psychiatrist con is_org_admin = true (profesional
+  // independiente) tiene, además de su acceso clínico normal, la misma
+  // capacidad administrativa que un org_admin (is_org_admin_or_super()).
+  is_org_admin: boolean;
+  // true cuando la cuenta fue creada por un administrador con una
+  // contraseña generada por el sistema (ver invite-user) y esa persona
+  // todavía no la ha cambiado. app/(protected)/layout.tsx redirige a
+  // /change-password mientras esta bandera esté en true.
+  must_change_password: boolean;
   created_at: string;
   updated_at: string;
 }

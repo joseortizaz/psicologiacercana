@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { InviteUserForm } from "@/components/InviteUserForm";
 import { CreateClinicForm } from "@/components/CreateClinicForm";
-import { ROLE_LABELS } from "@/lib/roles";
+import { ROLE_LABELS, hasAdminAccess } from "@/lib/roles";
 import type { Clinic, Profile } from "@/lib/types";
 
 export default async function OrgAdminPage() {
@@ -15,11 +15,11 @@ export default async function OrgAdminPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, organization_id")
+    .select("role, organization_id, is_org_admin")
     .eq("id", user!.id)
     .single();
 
-  if (profile?.role !== "org_admin") {
+  if (!profile || !hasAdminAccess(profile)) {
     redirect("/");
   }
 

@@ -27,3 +27,16 @@ export const ROLE_LABELS: Record<UserRole, string> = {
  * clínico (ver clinical_record_team_members). Se usa para poblar el
  * selector de "agregar miembro" en TeamMembersPanel. */
 export const CARE_TEAM_ROLES: UserRole[] = ["therapist", "psychiatrist", "supervisor"];
+
+/**
+ * ¿Esta persona tiene capacidad administrativa? Espejo, en el frontend, de
+ * is_org_admin_or_super() en la base de datos (ver
+ * plan-independientes-y-credenciales-cercana.md, sección A.1): además de
+ * org_admin/super_admin, un therapist/psychiatrist con is_org_admin = true
+ * (profesional independiente que administra su propia "clínica" de una
+ * persona) también cuenta. Se usa para las mismas rutas /org-admin/* que
+ * antes solo aceptaban role === 'org_admin'.
+ */
+export function hasAdminAccess(profile: { role: UserRole; is_org_admin?: boolean | null }): boolean {
+  return profile.role === "org_admin" || profile.role === "super_admin" || !!profile.is_org_admin;
+}
