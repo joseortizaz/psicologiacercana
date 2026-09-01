@@ -25,30 +25,22 @@ export async function middleware(request: NextRequest) {
     },
   );
 
+  // Gracias al matcher de abajo, este middleware SOLO corre sobre las rutas
+  // del panel autenticado (dashboard, account, assistant, org-admin,
+  // psychiatrist, super-admin, supervisor, therapist). La portada y el
+  // resto del sitio de marketing (/, /preguntas-frecuentes, /precios,
+  // /terminos, /privacidad, /registro, /login, /forgot-password,
+  // /set-password, /change-password, /auth/*) nunca invocan este código y
+  // por lo tanto nunca dependen de que Supabase responda: si el API
+  // Gateway de Supabase está degradado o caído, esas páginas públicas
+  // siguen cargando con normalidad.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicRoute =
-    request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/forgot-password") ||
-    request.nextUrl.pathname.startsWith("/registro") ||
-    request.nextUrl.pathname.startsWith("/terminos") ||
-    request.nextUrl.pathname.startsWith("/privacidad") ||
-    request.nextUrl.pathname.startsWith("/preguntas-frecuentes") ||
-    request.nextUrl.pathname.startsWith("/set-password") ||
-    request.nextUrl.pathname.startsWith("/change-password") ||
-    request.nextUrl.pathname.startsWith("/auth/");
-
-  if (!user && !isPublicRoute) {
+  if (!user) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
-  }
-
-  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/")) {
-    const homeUrl = new URL("/dashboard", request.url);
-    return NextResponse.redirect(homeUrl);
   }
 
   return response;
@@ -56,10 +48,18 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Corre en todas las rutas excepto assets estáticos y el propio
-     * endpoint de autenticación de Supabase.
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Únicamente las rutas que viven dentro del panel autenticado
+    // (el grupo app/(protected)/*) requieren sesión. Todo lo demás —
+    // portada, páginas de marketing, login, registro, recuperación de
+    // contraseña, etc. — queda fuera del matcher y jamás ejecuta este
+    // middleware ni llama a supabase.auth.getUser().
+    "/dashboard/:path*",
+    "/account/:path*",
+    "/assistant/:path*",
+    "/org-admin/:path*",
+    "/psychiatrist/:path*",
+    "/super-admin/:path*",
+    "/supervisor/:path*",
+    "/therapist/:path*",
   ],
 };
