@@ -36,7 +36,12 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/");
+    // Antes, el middleware detectaba una sesión válida en "/" y
+    // redirigía a "/dashboard" automáticamente. Ahora el middleware ya
+    // no corre sobre rutas públicas (fix de dependencia innecesaria de
+    // Supabase en la portada), así que hay que navegar explícitamente
+    // al panel tras un login exitoso.
+    router.push("/dashboard");
     router.refresh();
   }
 

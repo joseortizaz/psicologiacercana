@@ -14,7 +14,7 @@ import { PasswordInput } from "@/components/PasswordInput";
 // redirigió antes de renderizar cualquier otra pantalla. Tras actualizar la
 // contraseña, limpia esa bandera con mark_password_changed() -- si no se
 // limpia, el próximo layout.tsx vuelve a mandar aquí en un ciclo -- y recién
-// entonces redirige a "/".
+// entonces redirige a "/dashboard".
 export function ForcedPasswordChangeForm() {
   const router = useRouter();
   const supabase = createClient();
@@ -61,7 +61,10 @@ export function ForcedPasswordChangeForm() {
       );
     }
 
-    router.push("/");
+    // El middleware ya no corre sobre "/" (ver fix de dependencia
+    // innecesaria de Supabase en rutas públicas), así que navegamos al
+    // panel explícitamente en vez de depender de su redirect.
+    router.push("/dashboard");
     router.refresh();
   }
 
