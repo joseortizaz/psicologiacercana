@@ -39,7 +39,10 @@ export function SetPasswordForm() {
       return;
     }
 
-    router.push("/");
+    // El middleware ya no corre sobre "/" (ver fix de dependencia
+    // innecesaria de Supabase en rutas públicas), así que navegamos al
+    // panel explícitamente en vez de depender de su redirect.
+    router.push("/dashboard");
     router.refresh();
   }
 
