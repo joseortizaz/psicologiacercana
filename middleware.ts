@@ -34,13 +34,41 @@ export async function middleware(request: NextRequest) {
   // por lo tanto nunca dependen de que Supabase responda: si el API
   // Gateway de Supabase está degradado o caído, esas páginas públicas
   // siguen cargando con normalidad.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+    if (error) {
+      // No pudimos verificar la sesión contra el servidor de Auth de
+      // Supabase (por ejemplo, su API está lenta o con errores
+      // intermitentes -- ver incidente de Degraded Performance en
+      // status.supabase.com). NO tratamos esto como "no hay sesión":
+      // eso produce falsos negativos que expulsan a usuarios que sí
+      // acaban de autenticarse exitosamente (visto en producción: el
+      // POST a /auth/v1/token respondía 200, pero este getUser()
+      // fallaba y mandaba de vuelta a /login).
+      //
+      // En vez de eso, dejamos pasar la solicitud:
+      // app/(protected)/layout.tsx hace su propia verificación
+      // (getUser() + perfil) antes de renderizar cualquier pantalla del
+      // panel y redirige a /login si de verdad no hay sesión válida.
+      // Esa sigue siendo la barrera de seguridad real; este middleware
+      // es solo un atajo para el caso común, no la única defensa.
+      return response;
+    }
+
+    if (!user) {
+      const loginUrl = new URL("/login", request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+  } catch {
+    // Fallo de red al llamar a Supabase (timeout, DNS, etc.) en vez de
+    // un error "limpio" de la API. Mismo criterio que arriba: no
+    // bloqueamos el acceso por esto, dejamos que la página protegida
+    // haga su propia verificación.
+    return response;
   }
 
   return response;
