@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/AppShell";
+import { SessionRetryCard } from "@/components/SessionRetryCard";
 import type { Profile } from "@/lib/types";
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
@@ -19,10 +20,17 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     // esta llamada es independiente y corría el mismo riesgo: un fallo
     // transitorio no significa "no hay sesión", así que en vez de
     // expulsar a /login (lo que se ve como si la sesión se hubiera
-    // perdido) mostramos un error explícito -- ver
-    // app/(protected)/error.tsx -- para que la persona pueda
+    // perdido) mostramos un error explícito para que la persona pueda
     // reintentar con un solo clic.
-    throw new Error("No se pudo verificar tu sesión. Intenta de nuevo en unos segundos.");
+    //
+    // Importante: esto se RENDERIZA aquí en vez de lanzarse (throw) --
+    // app/(protected)/error.tsx NO puede capturar errores del propio
+    // layout.tsx de su mismo segmento (regla de Next.js: un error.tsx
+    // solo cubre lo que su layout renderiza hacia abajo, no el layout en
+    // sí). Un throw aquí terminaba en la página de error genérica de
+    // Next.js ("Application error: a server-side exception has
+    // occurred"), no en nuestra tarjeta.
+    return <SessionRetryCard message={userError.message} />;
   }
 
   if (!user) {
@@ -39,7 +47,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     // Mismo criterio: error real (red, timeout) distinto de "no existe
     // perfil para este usuario" (PGRST116, lo que sí es un caso válido
     // para mandar a /login más abajo).
-    throw new Error("No se pudo cargar tu perfil. Intenta de nuevo en unos segundos.");
+    return <SessionRetryCard message={profileError.message} />;
   }
 
   if (!profile || !profile.active) {
