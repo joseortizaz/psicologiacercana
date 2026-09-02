@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PasswordInput } from "@/components/PasswordInput";
 
@@ -16,7 +15,6 @@ import { PasswordInput } from "@/components/PasswordInput";
 // limpia, el próximo layout.tsx vuelve a mandar aquí en un ciclo -- y recién
 // entonces redirige a "/dashboard".
 export function ForcedPasswordChangeForm() {
-  const router = useRouter();
   const supabase = createClient();
 
   const [password, setPassword] = useState("");
@@ -61,11 +59,10 @@ export function ForcedPasswordChangeForm() {
       );
     }
 
-    // El middleware ya no corre sobre "/" (ver fix de dependencia
-    // innecesaria de Supabase en rutas públicas), así que navegamos al
-    // panel explícitamente en vez de depender de su redirect.
-    router.push("/dashboard");
-    router.refresh();
+    // Navegación dura: ver comentario equivalente en LoginForm.tsx --
+    // evita la carrera entre la cookie de sesión escribiéndose y el
+    // middleware leyéndola en la siguiente petición.
+    window.location.href = "/dashboard";
   }
 
   return (
