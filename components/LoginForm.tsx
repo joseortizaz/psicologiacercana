@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { PasswordInput } from "@/components/PasswordInput";
 
 export function LoginForm() {
-  const router = useRouter();
   const supabase = createClient();
 
   const [email, setEmail] = useState("");
@@ -36,13 +34,15 @@ export function LoginForm() {
       return;
     }
 
-    // Antes, el middleware detectaba una sesión válida en "/" y
-    // redirigía a "/dashboard" automáticamente. Ahora el middleware ya
-    // no corre sobre rutas públicas (fix de dependencia innecesaria de
-    // Supabase en la portada), así que hay que navegar explícitamente
-    // al panel tras un login exitoso.
-    router.push("/dashboard");
-    router.refresh();
+    // Navegación dura (no router.push): justo después de
+    // signInWithPassword, el cliente de Supabase todavía puede estar
+    // escribiendo la cookie de sesión de forma asíncrona. Un router.push
+    // (navegación soft de Next) puede alcanzar a pedir /dashboard antes
+    // de que esa cookie exista, y el middleware -- que sí depende de la
+    // cookie -- rebota de vuelta a /login. Forzar una recarga completa
+    // asegura que la petición a /dashboard salga después de que la
+    // cookie ya quedó escrita.
+    window.location.href = "/dashboard";
   }
 
   return (
