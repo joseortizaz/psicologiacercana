@@ -34,33 +34,12 @@ export async function middleware(request: NextRequest) {
   // por lo tanto nunca dependen de que Supabase responda: si el API
   // Gateway de Supabase está degradado o caído, esas páginas públicas
   // siguen cargando con normalidad.
-  // --- DEBUG TEMPORAL: quitar en cuanto encontremos la causa raíz ---
-  const debugCookieNames = request.cookies.getAll().map((c) => c.name);
-  console.log(
-    "[mw-debug] path:",
-    request.nextUrl.pathname,
-    "cookies:",
-    JSON.stringify(debugCookieNames),
-  );
-  // --- fin bloque debug (los console.log de más abajo también son
-  // temporales) ---
 
   try {
     const {
       data: { user },
       error,
     } = await supabase.auth.getUser();
-
-    console.log(
-      "[mw-debug] getUser ->",
-      JSON.stringify({
-        hasUser: !!user,
-        userId: user?.id ?? null,
-        errorName: error?.name ?? null,
-        errorMessage: error?.message ?? null,
-        errorStatus: (error as { status?: number } | null)?.status ?? null,
-      }),
-    );
 
     if (error) {
       // No pudimos verificar la sesión contra el servidor de Auth de
@@ -85,11 +64,7 @@ export async function middleware(request: NextRequest) {
       const loginUrl = new URL("/login", request.url);
       return NextResponse.redirect(loginUrl);
     }
-  } catch (thrown) {
-    console.log(
-      "[mw-debug] getUser threw ->",
-      thrown instanceof Error ? thrown.message : String(thrown),
-    );
+  } catch {
     // Fallo de red al llamar a Supabase (timeout, DNS, etc.) en vez de
     // un error "limpio" de la API. Mismo criterio que arriba: no
     // bloqueamos el acceso por esto, dejamos que la página protegida
