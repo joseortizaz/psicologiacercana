@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ScheduleAppointmentForm } from "@/components/ScheduleAppointmentForm";
 import { AppointmentStatusButtons } from "@/components/AppointmentStatusButtons";
+import { EditPatientForm } from "@/components/EditPatientForm";
 import type { Appointment, Patient } from "@/lib/types";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -48,7 +49,7 @@ export default async function AssistantPatientDetailPage({ params }: { params: {
   const { data: patient } = await supabase
     .from("patients")
     .select(
-      "id, organization_id, clinic_id, full_name, date_of_birth, category, national_id, gender, contact_phone, contact_email, address, occupation, education_level, referred_by, insurance_provider, insurance_policy_number, guardian_name, guardian_relationship, guardian_phone, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, active, primary_therapist_id",
+      "id, organization_id, clinic_id, full_name, date_of_birth, category, national_id, gender, contact_phone, contact_email, address, occupation, education_level, referred_by, insurance_provider, insurance_policy_number, guardian_name, guardian_relationship, guardian_phone, guardian_national_id, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, active, primary_therapist_id",
     )
     .eq("id", params.id)
     .single<Patient>();
@@ -112,6 +113,13 @@ export default async function AssistantPatientDetailPage({ params }: { params: {
                 "—"
               : "Sin asignar"}
           </p>
+        </div>
+
+        <div className="mt-4 border-t border-line pt-4">
+          <EditPatientForm
+            patient={patient}
+            assignableTherapists={therapists ?? []}
+          />
         </div>
 
         {(patient.guardian_name || patient.emergency_contact_name || patient.insurance_provider) && (
