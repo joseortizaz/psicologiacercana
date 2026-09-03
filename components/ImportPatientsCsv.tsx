@@ -207,7 +207,7 @@ export function ImportPatientsCsv({
   const invalidRows = rows.filter((r) => r.errors.length > 0);
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-line bg-white/60 p-6">
+    <div className="flex w-full flex-col gap-4 rounded-lg border border-line bg-white/60 p-6">
       <div className="flex items-center justify-between">
         <p className="font-display text-lg text-deep">Importar pacientes desde CSV</p>
         <button
