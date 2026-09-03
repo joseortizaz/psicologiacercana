@@ -184,7 +184,7 @@ export function CreatePatientForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-5 rounded-lg border border-line bg-white/60 p-6"
+      className="flex w-full flex-col gap-5 rounded-lg border border-line bg-white/60 p-6"
     >
       <p className="font-display text-lg text-deep">Agregar paciente</p>
 

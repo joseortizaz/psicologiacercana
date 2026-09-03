@@ -104,9 +104,9 @@ export default async function OrgAdminPatientsPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3">
         <p className="font-display text-2xl text-deep">Pacientes</p>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-start gap-3">
           <ExportCsvButton
             rows={exportRows}
             columns={PATIENT_EXPORT_COLUMNS}
