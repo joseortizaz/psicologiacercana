@@ -169,7 +169,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(
         {
           error:
-            "CUENTA_SOLO_LECTURA: la suscripción de esta cuenta venció; no se pueden agregar usuarios. Contacta a soporte para reactivarla.",
+            "CUENTA_SOLO_LECTURA: la suscripción de esta cuenta venció; no se pueden agregar usuarios. Contáctanos para reactivarla: info@narniats.com o WhatsApp 829-374-8878.",
         },
         403,
       );

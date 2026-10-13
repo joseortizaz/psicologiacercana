@@ -231,7 +231,7 @@ begin
   end if;
 
   if public.org_is_locked(v_org) then
-    raise exception 'CUENTA_SOLO_LECTURA: la suscripción de esta cuenta venció; solo se permite consultar. Contacta a soporte para reactivarla.'
+    raise exception 'CUENTA_SOLO_LECTURA: la suscripción de esta cuenta venció; solo se permite consultar. Contáctanos para reactivarla: info@narniats.com o WhatsApp 829-374-8878.'
       using errcode = 'P0001';
   end if;
 
