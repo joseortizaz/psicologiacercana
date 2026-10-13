@@ -24,7 +24,7 @@ export default async function SuperAdminPage() {
 
   const { data: organizations } = await supabase
     .from("organizations")
-    .select("id, name, plan_id, plan:plans(id, name, code), status, subscription_status, trial_ends_at, billing_email, created_at")
+    .select("id, name, plan_id, plan:plans(id, name, code), status, subscription_status, trial_ends_at, billing_cycle, paid_until, billing_email, created_at")
     .order("created_at", { ascending: false })
     .returns<Organization[]>();
 

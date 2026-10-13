@@ -202,6 +202,7 @@ Deno.serve(async (req: Request) => {
     full_name: signupRequest.full_name,
     email: signupRequest.email,
     phone: signupRequest.phone,
+    whatsapp_number: signupRequest.whatsapp_number ?? null,
     license_number: signupRequest.license_number,
     specialty: signupRequest.specialty,
     invited_by: callerAuth.user.id,

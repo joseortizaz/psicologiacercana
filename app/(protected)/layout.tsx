@@ -2,7 +2,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/AppShell";
 import { SessionRetryCard } from "@/components/SessionRetryCard";
-import type { Profile } from "@/lib/types";
+import { SubscriptionBanner } from "@/components/SubscriptionBanner";
+import { ReadOnlyBoundary } from "@/components/ReadOnlyBoundary";
+import type { AccessState, Profile } from "@/lib/types";
+
+const SUPPORT_EMAIL = "info@cercanard.com";
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
@@ -63,9 +67,19 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     redirect("/change-password");
   }
 
+  // Estado de la suscripción de la organización (avisos y solo lectura). El
+  // super_admin no pertenece a ninguna organización. Si la consulta falla no
+  // se bloquea la pantalla: el bloqueo real lo hace la base de datos.
+  let access: AccessState | null = null;
+  if (profile.role !== "super_admin" && profile.organization_id) {
+    const { data } = await supabase.rpc("my_org_access_state");
+    access = (data as unknown as AccessState[] | null)?.[0] ?? null;
+  }
+
   return (
     <AppShell fullName={profile.full_name} role={profile.role} isOrgAdmin={profile.is_org_admin}>
-      {children}
+      {access && <SubscriptionBanner access={access} supportEmail={SUPPORT_EMAIL} />}
+      <ReadOnlyBoundary locked={access?.state === "locked"}>{children}</ReadOnlyBoundary>
     </AppShell>
   );
 }

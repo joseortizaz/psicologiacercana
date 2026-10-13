@@ -156,6 +156,26 @@ Deno.serve(async (req: Request) => {
     targetOrgId = callerProfile.organization_id as string;
   }
 
+  // Cuenta en solo lectura (prueba vencida, pago vencido o suspendida): no se
+  // pueden crear usuarios nuevos. El super_admin sí (reactivación asistida).
+  if (callerProfile.role !== "super_admin") {
+    const { data: locked, error: lockError } = await supabaseAdmin.rpc("org_is_locked", {
+      p_org: targetOrgId,
+    });
+    if (lockError) {
+      return jsonResponse({ error: "No se pudo verificar el estado de la suscripción" }, 500);
+    }
+    if (locked) {
+      return jsonResponse(
+        {
+          error:
+            "CUENTA_SOLO_LECTURA: la suscripción de esta cuenta venció; no se pueden agregar usuarios. Contacta a soporte para reactivarla.",
+        },
+        403,
+      );
+    }
+  }
+
   // Si se especificó clínica, confirmar que pertenece a la organización destino
   if (clinicId) {
     const { data: clinic, error: clinicError } = await supabaseAdmin
