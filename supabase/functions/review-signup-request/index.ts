@@ -1,9 +1,15 @@
 // supabase/functions/review-signup-request/index.ts
 //
 // super_admin aprueba o rechaza una solicitud de autoregistro. Al aprobar,
-// crea en un solo paso: la organización (con 14 días de prueba), la
-// clínica, el usuario de Auth (invitación por correo) y el perfil de
-// terapeuta. Al rechazar, solo marca la solicitud con el motivo.
+// crea en un solo paso: la organización en estado 'trial' (la ventana de 14
+// días arranca en el momento exacto de la aprobación; la fija el trigger
+// apply_trial_window de la base de datos), la clínica, el usuario de Auth
+// (invitación por correo para crear contraseña) y el perfil de terapeuta.
+// Al rechazar, marca la solicitud con el motivo.
+//
+// En ambos casos se le envía un correo al solicitante (ver _shared/email.ts).
+// Un fallo de envío NO revierte la decisión: la respuesta incluye
+// emailSent: false y emailError para que el panel avise al super_admin.
 //
 // Header requerido: Authorization: Bearer <access_token de un super_admin>
 //
@@ -14,13 +20,12 @@
 //     "rejectionReason": "..."   // opcional, solo se usa en reject
 //   }
 //
-// Respuesta 200 (approve): { organizationId, userId }
-// Respuesta 200 (reject): { ok: true }
+// Respuesta 200 (approve): { organizationId, userId, trialEndsAt, emailSent, emailError? }
+// Respuesta 200 (reject): { ok: true, emailSent, emailError? }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
-
-const TRIAL_DAYS = 14;
+import { buildApprovalEmail, buildRejectionEmail, sendEmail } from "../_shared/email.ts";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -115,7 +120,17 @@ Deno.serve(async (req: Request) => {
         400,
       );
     }
-    return jsonResponse({ ok: true }, 200);
+
+    const rejection = buildRejectionEmail({
+      fullName: signupRequest.full_name,
+      reason: rejectionReason ?? null,
+    });
+    const emailResult = await sendEmail({ to: signupRequest.email, ...rejection });
+
+    return jsonResponse(
+      { ok: true, emailSent: emailResult.ok, ...(emailResult.ok ? {} : { emailError: emailResult.error }) },
+      200,
+    );
   }
 
   // ---------------------------------------------------------------
@@ -131,14 +146,15 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Ya existe una cuenta registrada con este correo." }, 409);
   }
 
-  const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
-
+  // subscription_status = 'trial': el trigger apply_trial_window fija
+  // trial_started_at = ahora y trial_ends_at = ahora + 14 días. El plan queda
+  // en el valor por defecto (Esencial) hasta que el super_admin lo cambie.
   const { data: org, error: orgError } = await supabaseAdmin
     .from("organizations")
     .insert({
       name: signupRequest.clinic_name,
       billing_email: signupRequest.email,
-      trial_ends_at: trialEndsAt,
+      subscription_status: "trial",
     })
     .select()
     .single();
@@ -209,18 +225,30 @@ Deno.serve(async (req: Request) => {
     })
     .eq("id", requestId);
 
-  if (reviewUpdateError) {
-    // La cuenta ya se creó correctamente; no revertimos por un fallo al
-    // marcar la solicitud, solo lo reportamos.
-    return jsonResponse(
-      {
-        organizationId: org.id,
-        userId: newUserId,
-        warning: `La cuenta se creó pero no se pudo actualizar el estado de la solicitud: ${reviewUpdateError.message}`,
-      },
-      200,
-    );
-  }
+  // Correo de aprobación. Se envía aunque el UPDATE de estado de arriba haya
+  // fallado: la cuenta ya existe y la persona debe enterarse.
+  const approval = buildApprovalEmail({
+    fullName: signupRequest.full_name,
+    clinicName: signupRequest.clinic_name,
+    trialEndsAt: org.trial_ends_at,
+  });
+  const emailResult = await sendEmail({ to: signupRequest.email, ...approval });
 
-  return jsonResponse({ organizationId: org.id, userId: newUserId }, 200);
+  return jsonResponse(
+    {
+      organizationId: org.id,
+      userId: newUserId,
+      trialEndsAt: org.trial_ends_at,
+      emailSent: emailResult.ok,
+      ...(emailResult.ok ? {} : { emailError: emailResult.error }),
+      // La cuenta ya se creó correctamente; no revertimos por un fallo al
+      // marcar la solicitud, solo lo reportamos.
+      ...(reviewUpdateError
+        ? {
+            warning: `La cuenta se creó pero no se pudo actualizar el estado de la solicitud: ${reviewUpdateError.message}`,
+          }
+        : {}),
+    },
+    200,
+  );
 });

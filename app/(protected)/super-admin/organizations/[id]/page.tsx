@@ -24,7 +24,7 @@ export default async function EditOrganizationPage({ params }: { params: { id: s
   const { data: organization } = await supabase
     .from("organizations")
     .select(
-      "id, name, legal_name, tax_id, plan_id, status, billing_email, country, timezone, trial_ends_at, max_clinics, created_at, updated_at",
+      "id, name, legal_name, tax_id, plan_id, status, subscription_status, billing_email, country, timezone, trial_started_at, trial_ends_at, max_clinics, created_at, updated_at",
     )
     .eq("id", params.id)
     .single<Organization>();

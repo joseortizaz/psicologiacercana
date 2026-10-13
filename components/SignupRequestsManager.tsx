@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { extractFunctionErrorMessage } from "@/lib/functionError";
+import { whatsappLink } from "@/lib/phone";
 import type { SignupRequest, SignupRequestStatus } from "@/lib/types";
 
 const STATUS_LABELS: Record<SignupRequestStatus, string> = {
@@ -37,9 +38,14 @@ type DocumentUrls = {
 function SignupRequestCard({
   request,
   onChanged,
+  onNotice,
 }: {
   request: SignupRequest;
   onChanged: () => void;
+  // Avisos posteriores a la decisión (p. ej. "el correo no se pudo enviar").
+  // Los muestra el panel, no la tarjeta: en la vista "Pendientes" la tarjeta
+  // desaparece al refrescar y el aviso se perdería con ella.
+  onNotice: (message: string) => void;
 }) {
   const supabase = createClient();
   const [loadingDocs, setLoadingDocs] = useState(false);
@@ -63,7 +69,11 @@ function SignupRequestCard({
   }
 
   async function handleApprove() {
-    if (!confirm(`¿Aprobar la solicitud de ${request.full_name}? Se creará su cuenta y clínica.`)) {
+    if (
+      !confirm(
+        `¿Aprobar la solicitud de ${request.full_name}? Se creará su cuenta y clínica, comenzará su prueba gratuita de 14 días ahora mismo y se le enviará un correo de aprobación.`,
+      )
+    ) {
       return;
     }
     setBusy(true);
@@ -76,20 +86,37 @@ function SignupRequestCard({
       setError(data?.error ?? (await extractFunctionErrorMessage(fnError)));
       return;
     }
+    if (data?.warning) {
+      onNotice(String(data.warning));
+    }
+    if (data?.emailSent === false) {
+      onNotice(
+        `La cuenta se creó, pero no se pudo enviar el correo de aprobación a ${request.email}: ${data.emailError ?? "error desconocido"}. Avísale por otro medio.`,
+      );
+      onChanged();
+      return;
+    }
     onChanged();
   }
 
   async function handleReject() {
-    const reason = prompt("Motivo del rechazo (opcional):") ?? undefined;
+    const reason = prompt("Motivo del rechazo (se incluirá en el correo al solicitante; opcional):");
+    // prompt devuelve null si se cancela: no rechazar en ese caso.
+    if (reason === null) return;
     setBusy(true);
     setError(null);
     const { data, error: fnError } = await supabase.functions.invoke("review-signup-request", {
-      body: { requestId: request.id, action: "reject", rejectionReason: reason },
+      body: { requestId: request.id, action: "reject", rejectionReason: reason || undefined },
     });
     setBusy(false);
     if (fnError || data?.error) {
       setError(data?.error ?? (await extractFunctionErrorMessage(fnError)));
       return;
+    }
+    if (data?.emailSent === false) {
+      onNotice(
+        `La solicitud se rechazó, pero no se pudo enviar el correo a ${request.email}: ${data.emailError ?? "error desconocido"}.`,
+      );
     }
     onChanged();
   }
@@ -113,7 +140,26 @@ function SignupRequestCard({
           <span className="text-ink/50">Clínica/consultorio:</span> {request.clinic_name}
         </p>
         <p>
-          <span className="text-ink/50">Teléfono:</span> {request.phone ?? "—"}
+          <span className="text-ink/50">Teléfono principal:</span> {request.phone ?? "—"}
+        </p>
+        <p>
+          <span className="text-ink/50">WhatsApp:</span>{" "}
+          {request.whatsapp_number ? (
+            whatsappLink(request.whatsapp_number) ? (
+              <a
+                href={whatsappLink(request.whatsapp_number)!}
+                target="_blank"
+                rel="noreferrer"
+                className="text-deep underline decoration-deep/30 underline-offset-2"
+              >
+                {request.whatsapp_number}
+              </a>
+            ) : (
+              request.whatsapp_number
+            )
+          ) : (
+            "—"
+          )}
         </p>
         <p>
           <span className="text-ink/50">Exequátur/licencia:</span> {request.license_number ?? "—"}
@@ -212,6 +258,7 @@ function SignupRequestCard({
 export function SignupRequestsManager({ initialRequests }: { initialRequests: SignupRequest[] }) {
   const router = useRouter();
   const [showAll, setShowAll] = useState(false);
+  const [notices, setNotices] = useState<string[]>([]);
 
   function refresh() {
     router.refresh();
@@ -223,6 +270,22 @@ export function SignupRequestsManager({ initialRequests }: { initialRequests: Si
 
   return (
     <div className="flex flex-col gap-6">
+      {notices.map((message, index) => (
+        <div
+          key={index}
+          role="status"
+          className="flex items-start justify-between gap-3 rounded-md bg-clay/10 px-4 py-3 text-sm text-clay"
+        >
+          <p>{message}</p>
+          <button
+            onClick={() => setNotices((prev) => prev.filter((_, i) => i !== index))}
+            className="shrink-0 text-xs font-medium underline underline-offset-2"
+          >
+            Cerrar
+          </button>
+        </div>
+      ))}
+
       <div className="flex items-center gap-4">
         <button
           onClick={() => setShowAll(false)}
@@ -245,7 +308,12 @@ export function SignupRequestsManager({ initialRequests }: { initialRequests: Si
       ) : (
         <div className="flex flex-col gap-4">
           {visible.map((request) => (
-            <SignupRequestCard key={request.id} request={request} onChanged={refresh} />
+            <SignupRequestCard
+              key={request.id}
+              request={request}
+              onChanged={refresh}
+              onNotice={(message) => setNotices((prev) => [...prev, message])}
+            />
           ))}
         </div>
       )}

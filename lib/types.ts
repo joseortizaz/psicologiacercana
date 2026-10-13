@@ -56,6 +56,9 @@ export interface Plan {
   updated_at: string;
 }
 
+// 'trial' = en período de prueba gratuita; 'active' = cuenta con plan.
+export type SubscriptionStatus = "trial" | "active";
+
 export interface Organization {
   id: string;
   name: string;
@@ -64,9 +67,11 @@ export interface Organization {
   plan_id: string;
   plan?: Pick<Plan, "id" | "name" | "code"> | null;
   status: OrganizationStatus;
+  subscription_status: SubscriptionStatus;
   billing_email: string | null;
   country: string;
   timezone: string;
+  trial_started_at: string | null;
   trial_ends_at: string | null;
   max_clinics: number;
   created_at: string;
@@ -96,6 +101,7 @@ export interface SignupRequest {
   full_name: string;
   email: string;
   phone: string | null;
+  whatsapp_number: string | null;
   license_number: string | null;
   specialty: string | null;
   clinic_name: string;

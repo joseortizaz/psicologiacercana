@@ -74,7 +74,17 @@ export function OrganizationsTable({ initialOrganizations }: { initialOrganizati
                   {org.name}
                 </Link>
               </td>
-              <td className="px-5 py-3.5 text-ink/70">{org.plan?.name ?? "—"}</td>
+              <td className="px-5 py-3.5 text-ink/70">
+                {org.plan?.name ?? "—"}
+                {org.subscription_status === "trial" && (
+                  <span className="ml-2 rounded-full bg-clay/15 px-2 py-0.5 text-xs font-medium text-clay">
+                    Prueba
+                    {org.trial_ends_at
+                      ? ` · vence ${new Date(org.trial_ends_at).toLocaleDateString("es-DO")}`
+                      : ""}
+                  </span>
+                )}
+              </td>
               <td className="px-5 py-3.5">
                 <span
                   className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[org.status]}`}
