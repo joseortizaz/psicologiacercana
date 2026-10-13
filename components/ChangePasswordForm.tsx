@@ -45,7 +45,7 @@ export function ChangePasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} data-allow-when-locked className="flex flex-col gap-4">
       <PasswordInput
         id="newPassword"
         label="Nueva contraseña"

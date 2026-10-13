@@ -19,7 +19,7 @@ export default async function AccountPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "id, organization_id, clinic_id, role, full_name, email, phone, license_number, specialty, avatar_url, active, invited_by, created_at, updated_at",
+      "id, organization_id, clinic_id, role, full_name, email, phone, whatsapp_number, license_number, specialty, avatar_url, active, invited_by, created_at, updated_at",
     )
     .eq("id", user.id)
     .single<Profile>();
@@ -43,6 +43,7 @@ export default async function AccountPage() {
           role={profile.role}
           initialFullName={profile.full_name}
           initialPhone={profile.phone}
+          initialWhatsapp={profile.whatsapp_number}
           initialLicenseNumber={profile.license_number}
           initialSpecialty={profile.specialty}
         />

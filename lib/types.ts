@@ -14,6 +14,7 @@ export interface Profile {
   full_name: string;
   email: string;
   phone: string | null;
+  whatsapp_number: string | null;
   license_number: string | null;
   specialty: string | null;
   avatar_url: string | null;
@@ -58,6 +59,41 @@ export interface Plan {
 
 // 'trial' = en período de prueba gratuita; 'active' = cuenta con plan.
 export type SubscriptionStatus = "trial" | "active";
+export type BillingCycle = "monthly" | "annual";
+
+// Resultado de my_org_access_state() (ver 20260811000000_subscription_lock_and_renewal.sql).
+//   ok      = sin avisos
+//   notice  = se acerca el vencimiento (prueba o renovación)
+//   warning = venció la fecha de pago; pronto perderá la edición
+//   locked  = solo lectura
+export type AccessStateName = "ok" | "notice" | "warning" | "locked";
+export type AccessReason =
+  | "trial_ending"
+  | "trial_expired"
+  | "renewal_upcoming"
+  | "payment_overdue"
+  | "suspended";
+export interface AccessState {
+  state: AccessStateName;
+  reason: AccessReason | null;
+  due_at: string | null;
+  days_until_due: number | null;
+  subscription_status: SubscriptionStatus;
+  billing_cycle: BillingCycle;
+}
+
+export interface SubscriptionPayment {
+  id: string;
+  organization_id: string;
+  plan_id: string | null;
+  billing_cycle: BillingCycle;
+  amount: number;
+  currency: string;
+  paid_at: string;
+  covers_until: string;
+  note: string | null;
+  created_at: string;
+}
 
 export interface Organization {
   id: string;
@@ -73,6 +109,8 @@ export interface Organization {
   timezone: string;
   trial_started_at: string | null;
   trial_ends_at: string | null;
+  billing_cycle: BillingCycle;
+  paid_until: string | null;
   max_clinics: number;
   created_at: string;
   updated_at: string;

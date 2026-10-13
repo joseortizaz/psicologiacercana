@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { isLocked } from "@/lib/subscription";
 import type { Organization } from "@/lib/types";
 
 const STATUS_LABELS: Record<Organization["status"], string> = {
@@ -91,6 +92,11 @@ export function OrganizationsTable({ initialOrganizations }: { initialOrganizati
                 >
                   {STATUS_LABELS[org.status]}
                 </span>
+                {org.status === "active" && isLocked(org) && (
+                  <span className="ml-2 rounded-full bg-clay/15 px-2 py-0.5 text-xs font-medium text-clay">
+                    Solo lectura por vencimiento
+                  </span>
+                )}
               </td>
               <td className="px-5 py-3.5 text-ink/50">
                 {new Date(org.created_at).toLocaleDateString("es-DO")}

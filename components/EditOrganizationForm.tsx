@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import type { Organization, OrganizationStatus, Plan, SubscriptionStatus } from "@/lib/types";
+import type { BillingCycle, Organization, OrganizationStatus, Plan, SubscriptionStatus } from "@/lib/types";
 
 type PlanOption = Pick<
   Plan,
@@ -94,6 +94,11 @@ export function EditOrganizationForm({
     initialTrialInput(organization.subscription_status, organization.trial_ends_at),
   );
   const [trialEndsAt, setTrialEndsAt] = useState(initialTrialEndsAt);
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>(organization.billing_cycle);
+  // Igual que el fin de prueba: la próxima fecha de pago solo se envía si se
+  // editó. Lo normal es moverla registrando un pago (panel de arriba).
+  const [initialPaidUntil, setInitialPaidUntil] = useState(isoToLocalInput(organization.paid_until));
+  const [paidUntil, setPaidUntil] = useState(initialPaidUntil);
   const [maxClinics, setMaxClinics] = useState(String(organization.max_clinics));
 
   const [loading, setLoading] = useState(false);
@@ -124,10 +129,14 @@ export function EditOrganizationForm({
         ...(trialEndsAt !== initialTrialEndsAt
           ? { trial_ends_at: trialEndsAt ? new Date(trialEndsAt).toISOString() : null }
           : {}),
+        billing_cycle: billingCycle,
+        ...(paidUntil !== initialPaidUntil
+          ? { paid_until: paidUntil ? new Date(paidUntil).toISOString() : null }
+          : {}),
         max_clinics: Number(maxClinics) || 1,
       })
       .eq("id", organization.id)
-      .select("subscription_status, trial_started_at, trial_ends_at")
+      .select("subscription_status, trial_started_at, trial_ends_at, paid_until")
       .single();
 
     setLoading(false);
@@ -142,6 +151,9 @@ export function EditOrganizationForm({
     const nextInput = initialTrialInput(updated.subscription_status, updated.trial_ends_at);
     setSavedStatus(updated.subscription_status);
     setTrialStartedAt(updated.trial_started_at);
+    const nextPaid = isoToLocalInput(updated.paid_until);
+    setInitialPaidUntil(nextPaid);
+    setPaidUntil(nextPaid);
     setInitialTrialEndsAt(nextInput);
     setTrialEndsAt(nextInput);
 
@@ -252,6 +264,32 @@ export function EditOrganizationForm({
                   : "Cambia esta fecha para extender o acortar la prueba."}
             </p>
           </Field>
+        )}
+        {subscriptionStatus === "active" && (
+          <>
+            <Field label="Ciclo de facturación">
+              <select
+                value={billingCycle}
+                onChange={(e) => setBillingCycle(e.target.value as BillingCycle)}
+                className={inputClass}
+              >
+                <option value="monthly">Mensual</option>
+                <option value="annual">Anual</option>
+              </select>
+            </Field>
+            <Field label="Próxima fecha de pago">
+              <input
+                type="datetime-local"
+                value={paidUntil}
+                onChange={(e) => setPaidUntil(e.target.value)}
+                className={inputClass}
+              />
+              <p className="text-xs text-ink/50">
+                Lo normal es registrar un pago arriba, que la mueve sola. Sin fecha, la cuenta no se
+                bloquea por vencimiento.
+              </p>
+            </Field>
+          </>
         )}
         <Field label="Máximo de sucursales">
           <input
