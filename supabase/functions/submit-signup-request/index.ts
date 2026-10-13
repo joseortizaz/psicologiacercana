@@ -14,7 +14,8 @@
 //     "requestId": "uuid",       // el mismo que devolvió create-signup-upload-slots
 //     "fullName": "...",
 //     "email": "...",
-//     "phone": "...",            // opcional
+//     "phone": "...",            // teléfono principal de contacto (obligatorio)
+//     "whatsappNumber": "...",   // número de WhatsApp (obligatorio)
 //     "licenseNumber": "...",
 //     "specialty": "...",        // opcional
 //     "clinicName": "..."
@@ -29,6 +30,16 @@ const BUCKET = "signup-documents";
 const REQUIRED_DOCUMENTS = ["id-document", "credential-document", "license-document"];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Un teléfono es válido si, quitando espacios, guiones, paréntesis y el "+"
+// inicial, quedan solo dígitos y son entre 10 y 15 (un número dominicano con
+// código de país son 11; con código internacional hasta 15, según E.164).
+// No se restringe a prefijos 809/829/849 a propósito: el solicitante puede
+// tener un número de otro país.
+function isValidPhone(value: string): boolean {
+  const compact = value.trim().replace(/[\s\-().]/g, "").replace(/^\+/, "");
+  return /^\d{10,15}$/.test(compact);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -42,6 +53,7 @@ Deno.serve(async (req: Request) => {
     fullName?: string;
     email?: string;
     phone?: string;
+    whatsappNumber?: string;
     licenseNumber?: string;
     specialty?: string;
     clinicName?: string;
@@ -53,7 +65,8 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Body inválido, se esperaba JSON" }, 400);
   }
 
-  const { requestId, fullName, email, phone, licenseNumber, specialty, clinicName } = payload;
+  const { requestId, fullName, email, phone, whatsappNumber, licenseNumber, specialty, clinicName } =
+    payload;
 
   if (!requestId || !UUID_RE.test(requestId)) {
     return jsonResponse({ error: "requestId inválido" }, 400);
@@ -63,6 +76,19 @@ Deno.serve(async (req: Request) => {
       { error: "fullName, email, licenseNumber y clinicName son requeridos" },
       400,
     );
+  }
+
+  if (!phone?.trim() || !whatsappNumber?.trim()) {
+    return jsonResponse(
+      { error: "El teléfono principal y el número de WhatsApp son requeridos" },
+      400,
+    );
+  }
+  if (!isValidPhone(phone)) {
+    return jsonResponse({ error: "El teléfono principal no es válido" }, 400);
+  }
+  if (!isValidPhone(whatsappNumber)) {
+    return jsonResponse({ error: "El número de WhatsApp no es válido" }, 400);
   }
 
   const emailTrimmed = email.trim().toLowerCase();
@@ -128,7 +154,8 @@ Deno.serve(async (req: Request) => {
     id: requestId,
     full_name: fullName.trim(),
     email: emailTrimmed,
-    phone: phone?.trim() || null,
+    phone: phone.trim(),
+    whatsapp_number: whatsappNumber.trim(),
     license_number: licenseNumber.trim(),
     specialty: specialty?.trim() || null,
     clinic_name: clinicName.trim(),

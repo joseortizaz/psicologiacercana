@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { DocumentUploadField } from "@/components/DocumentUploadField";
 import { extractFunctionErrorMessage } from "@/lib/functionError";
+import { isValidPhone } from "@/lib/phone";
 
 type UploadSlot = { path: string; token: string; signedUrl: string };
 
@@ -21,6 +22,8 @@ export function SignupRequestForm() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [sameAsPhone, setSameAsPhone] = useState(false);
   const [licenseNumber, setLicenseNumber] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [clinicName, setClinicName] = useState("");
@@ -38,6 +41,18 @@ export function SignupRequestForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    const whatsappNumber = sameAsPhone ? phone : whatsapp;
+
+    if (!isValidPhone(phone)) {
+      setError("Ingresa un teléfono principal válido (entre 10 y 15 dígitos).");
+      return;
+    }
+
+    if (!isValidPhone(whatsappNumber)) {
+      setError("Ingresa un número de WhatsApp válido (entre 10 y 15 dígitos).");
+      return;
+    }
 
     if (!idDocument || !credentialDocument || !licenseDocument) {
       setError("Debes adjuntar los 3 documentos.");
@@ -87,7 +102,8 @@ export function SignupRequestForm() {
           requestId: slots.requestId,
           fullName,
           email,
-          phone: phone || undefined,
+          phone,
+          whatsappNumber,
           licenseNumber,
           specialty: specialty || undefined,
           clinicName,
@@ -112,7 +128,8 @@ export function SignupRequestForm() {
           ¡Listo! Recibimos tu solicitud de prueba gratuita. Un administrador va a revisar tus
           documentos y, si todo está en orden, te enviaremos un correo a{" "}
           <span className="font-medium text-ink">{email}</span> para que crees tu contraseña y
-          empieces a usar Cercana.
+          empieces tu prueba gratuita de 14 días. Te escribiremos a ese mismo correo con la
+          decisión, sea cual sea.
         </p>
         <Link
           href="/"
@@ -152,14 +169,37 @@ export function SignupRequestForm() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-ink/80">Teléfono</label>
+          <label className="text-sm font-medium text-ink/80">Teléfono principal de contacto</label>
           <input
+            required
             type="tel"
+            autoComplete="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="rounded-md border border-line bg-white px-3.5 py-2.5 outline-none focus:border-deep"
             placeholder="+1 809 000 0000"
           />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-ink/80">Número de WhatsApp</label>
+          <input
+            required
+            type="tel"
+            value={sameAsPhone ? phone : whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            disabled={sameAsPhone}
+            className="rounded-md border border-line bg-white px-3.5 py-2.5 outline-none focus:border-deep disabled:bg-paperMuted disabled:text-ink/50"
+            placeholder="+1 829 000 0000"
+          />
+          <label className="flex items-center gap-2 text-xs text-ink/60">
+            <input
+              type="checkbox"
+              checked={sameAsPhone}
+              onChange={(e) => setSameAsPhone(e.target.checked)}
+            />
+            Es el mismo número de mi teléfono principal
+          </label>
         </div>
 
         <div className="flex flex-col gap-1.5">

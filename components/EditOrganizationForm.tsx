@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import type { Organization, OrganizationStatus, Plan } from "@/lib/types";
+import type { Organization, OrganizationStatus, Plan, SubscriptionStatus } from "@/lib/types";
 
 type PlanOption = Pick<
   Plan,
@@ -20,6 +20,30 @@ const STATUS_OPTIONS: { value: OrganizationStatus; label: string }[] = [
   { value: "suspended", label: "Suspendida" },
   { value: "cancelled", label: "Cancelada" },
 ];
+
+const SUBSCRIPTION_OPTIONS: { value: SubscriptionStatus; label: string }[] = [
+  { value: "trial", label: "En prueba gratuita" },
+  { value: "active", label: "Con plan activo" },
+];
+
+// Valor para <input type="datetime-local"> (hora local del navegador) a
+// partir de un ISO de la base de datos.
+function isoToLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString("es-DO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 const inputClass =
   "rounded-md border border-line bg-white px-3.5 py-2.5 outline-none focus:border-deep";
@@ -51,9 +75,25 @@ export function EditOrganizationForm({
   const [billingEmail, setBillingEmail] = useState(organization.billing_email ?? "");
   const [country, setCountry] = useState(organization.country);
   const [timezone, setTimezone] = useState(organization.timezone);
-  const [trialEndsAt, setTrialEndsAt] = useState(
-    organization.trial_ends_at ? organization.trial_ends_at.slice(0, 10) : "",
+  // Estado de suscripción: "en prueba" o "con plan". Lo que está guardado en
+  // la base (savedStatus) se distingue de lo que el formulario tiene
+  // seleccionado (subscriptionStatus): al pasar de plan a prueba, la base fija
+  // la ventana de 14 días sola (trigger apply_trial_window) salvo que aquí se
+  // indique una fecha propia.
+  const [savedStatus, setSavedStatus] = useState<SubscriptionStatus>(organization.subscription_status);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>(
+    organization.subscription_status,
   );
+  const [trialStartedAt, setTrialStartedAt] = useState(organization.trial_started_at);
+  // El campo de fin de prueba solo se envía si el super_admin lo tocó: antes
+  // se reenviaba siempre, y como el input era solo-fecha, cada guardado
+  // pisaba la hora exacta de aprobación con medianoche UTC.
+  const initialTrialInput = (status: SubscriptionStatus, endsAt: string | null) =>
+    status === "trial" ? isoToLocalInput(endsAt) : "";
+  const [initialTrialEndsAt, setInitialTrialEndsAt] = useState(
+    initialTrialInput(organization.subscription_status, organization.trial_ends_at),
+  );
+  const [trialEndsAt, setTrialEndsAt] = useState(initialTrialEndsAt);
   const [maxClinics, setMaxClinics] = useState(String(organization.max_clinics));
 
   const [loading, setLoading] = useState(false);
@@ -68,7 +108,7 @@ export function EditOrganizationForm({
     setError(null);
     setSaved(false);
 
-    const { error: updateError } = await supabase
+    const { data: updated, error: updateError } = await supabase
       .from("organizations")
       .update({
         name,
@@ -76,20 +116,34 @@ export function EditOrganizationForm({
         tax_id: taxId || null,
         plan_id: planId,
         status,
+        subscription_status: subscriptionStatus,
         billing_email: billingEmail || null,
         country,
         timezone,
-        trial_ends_at: trialEndsAt || null,
+        // Solo si se editó (ver comentario en initialTrialEndsAt).
+        ...(trialEndsAt !== initialTrialEndsAt
+          ? { trial_ends_at: trialEndsAt ? new Date(trialEndsAt).toISOString() : null }
+          : {}),
         max_clinics: Number(maxClinics) || 1,
       })
-      .eq("id", organization.id);
+      .eq("id", organization.id)
+      .select("subscription_status, trial_started_at, trial_ends_at")
+      .single();
 
     setLoading(false);
 
-    if (updateError) {
-      setError(updateError.message);
+    if (updateError || !updated) {
+      setError(updateError?.message ?? "No se pudo guardar.");
       return;
     }
+
+    // Resincronizar con lo que la base realmente guardó (el trigger pudo
+    // haber fijado las fechas de la prueba).
+    const nextInput = initialTrialInput(updated.subscription_status, updated.trial_ends_at);
+    setSavedStatus(updated.subscription_status);
+    setTrialStartedAt(updated.trial_started_at);
+    setInitialTrialEndsAt(nextInput);
+    setTrialEndsAt(nextInput);
 
     setSaved(true);
     router.refresh();
@@ -140,6 +194,19 @@ export function EditOrganizationForm({
             ))}
           </select>
         </Field>
+        <Field label="Tipo de cuenta">
+          <select
+            value={subscriptionStatus}
+            onChange={(e) => setSubscriptionStatus(e.target.value as SubscriptionStatus)}
+            className={inputClass}
+          >
+            {SUBSCRIPTION_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </Field>
         <Field label="Estado">
           <select
             value={status}
@@ -169,14 +236,23 @@ export function EditOrganizationForm({
             className={inputClass}
           />
         </Field>
-        <Field label="Fin del período de prueba (opcional)">
-          <input
-            type="date"
-            value={trialEndsAt}
-            onChange={(e) => setTrialEndsAt(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
+        {subscriptionStatus === "trial" && (
+          <Field label="Fin de la prueba gratuita">
+            <input
+              type="datetime-local"
+              value={trialEndsAt}
+              onChange={(e) => setTrialEndsAt(e.target.value)}
+              className={inputClass}
+            />
+            <p className="text-xs text-ink/50">
+              {savedStatus !== "trial"
+                ? "Déjalo vacío para que la prueba dure 14 días completos desde el momento en que guardes. Si indicas una fecha, se usa esa."
+                : trialStartedAt
+                  ? `La prueba comenzó el ${formatDateTime(trialStartedAt)}. Cambia esta fecha para extenderla o acortarla.`
+                  : "Cambia esta fecha para extender o acortar la prueba."}
+            </p>
+          </Field>
+        )}
         <Field label="Máximo de sucursales">
           <input
             required
@@ -188,6 +264,14 @@ export function EditOrganizationForm({
           />
         </Field>
       </div>
+
+      {subscriptionStatus === "active" && trialStartedAt && (
+        <p className="text-xs text-ink/50">
+          Esta cuenta tuvo una prueba gratuita desde el {formatDateTime(trialStartedAt)}. Si la
+          pasas de nuevo a &quot;En prueba gratuita&quot;, los 14 días vuelven a contar desde el
+          momento en que guardes.
+        </p>
+      )}
 
       {selectedPlan && (
         <div className="rounded-md border border-line bg-paper/60 px-4 py-3 text-sm text-ink/70">
