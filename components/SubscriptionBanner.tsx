@@ -1,18 +1,23 @@
 import type { AccessState } from "@/lib/types";
 import { formatDate } from "@/lib/subscription";
+import { SUPPORT_EMAIL, SUPPORT_WHATSAPP_DISPLAY, SUPPORT_WHATSAPP_LINK } from "@/lib/support";
 
 // Aviso en el panel del profesional según my_org_access_state(). A propósito
 // NO dice cuántos días faltan para perder la edición: solo que la fecha ya
 // venció y que pronto se perderá (ver reglas en la migración).
-export function SubscriptionBanner({ access, supportEmail }: { access: AccessState; supportEmail: string }) {
+export function SubscriptionBanner({ access }: { access: AccessState }) {
   if (access.state === "ok") return null;
 
   const due = access.due_at ? formatDate(access.due_at) : null;
   const contact = (
     <>
-      Escríbenos a{" "}
-      <a href={`mailto:${supportEmail}`} className="font-medium underline">
-        {supportEmail}
+      Contáctanos por correo a{" "}
+      <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium underline">
+        {SUPPORT_EMAIL}
+      </a>{" "}
+      o por WhatsApp al{" "}
+      <a href={SUPPORT_WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="font-medium underline">
+        {SUPPORT_WHATSAPP_DISPLAY}
       </a>
       .
     </>

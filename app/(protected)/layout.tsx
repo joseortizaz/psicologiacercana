@@ -6,8 +6,6 @@ import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { ReadOnlyBoundary } from "@/components/ReadOnlyBoundary";
 import type { AccessState, Profile } from "@/lib/types";
 
-const SUPPORT_EMAIL = "info@cercanard.com";
-
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
 
@@ -78,7 +76,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
   return (
     <AppShell fullName={profile.full_name} role={profile.role} isOrgAdmin={profile.is_org_admin}>
-      {access && <SubscriptionBanner access={access} supportEmail={SUPPORT_EMAIL} />}
+      {access && <SubscriptionBanner access={access} />}
       <ReadOnlyBoundary locked={access?.state === "locked"}>{children}</ReadOnlyBoundary>
     </AppShell>
   );
