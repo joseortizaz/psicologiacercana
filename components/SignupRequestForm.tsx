@@ -6,6 +6,12 @@ import { createClient } from "@/lib/supabase/client";
 import { DocumentUploadField } from "@/components/DocumentUploadField";
 import { extractFunctionErrorMessage } from "@/lib/functionError";
 import { isValidPhone } from "@/lib/phone";
+import type { SignupProfessionalType } from "@/lib/types";
+
+const PROFESSIONAL_OPTIONS: { value: SignupProfessionalType; label: string; hint: string; specialty: string }[] = [
+  { value: "psychologist", label: "Soy Psicólogo/a", hint: "Psicoterapia, evaluación y seguimiento", specialty: "Ej. Psicología clínica" },
+  { value: "psychiatrist", label: "Soy Psiquiatra", hint: "Consulta psiquiátrica y tratamiento médico", specialty: "Ej. Psiquiatría general" },
+];
 
 type UploadSlot = { path: string; token: string; signedUrl: string };
 
@@ -19,6 +25,7 @@ type UploadSlotsResponse = {
 export function SignupRequestForm() {
   const supabase = createClient();
 
+  const [professionalType, setProfessionalType] = useState<SignupProfessionalType | null>(null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -43,6 +50,11 @@ export function SignupRequestForm() {
     setError(null);
 
     const whatsappNumber = sameAsPhone ? phone : whatsapp;
+
+    if (!professionalType) {
+      setError("Indica si eres psicólogo/a o psiquiatra.");
+      return;
+    }
 
     if (!isValidPhone(phone)) {
       setError("Ingresa un teléfono principal válido (entre 10 y 15 dígitos).");
@@ -104,6 +116,7 @@ export function SignupRequestForm() {
           email,
           phone,
           whatsappNumber,
+          professionalType,
           licenseNumber,
           specialty: specialty || undefined,
           clinicName,
@@ -143,6 +156,35 @@ export function SignupRequestForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <fieldset className="flex flex-col gap-2">
+        <legend className="text-sm font-medium text-ink/80">¿Cuál es tu profesión?</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {PROFESSIONAL_OPTIONS.map((opt) => (
+            <label
+              key={opt.value}
+              className={`flex cursor-pointer flex-col gap-0.5 rounded-md border px-4 py-3 transition ${
+                professionalType === opt.value
+                  ? "border-deep bg-deep/5"
+                  : "border-line bg-white hover:border-deep/50"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm font-medium text-deep">
+                <input
+                  type="radio"
+                  name="professionalType"
+                  value={opt.value}
+                  required
+                  checked={professionalType === opt.value}
+                  onChange={() => setProfessionalType(opt.value)}
+                />
+                {opt.label}
+              </span>
+              <span className="pl-6 text-xs text-ink/60">{opt.hint}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-ink/80">Nombre completo</label>
@@ -219,7 +261,7 @@ export function SignupRequestForm() {
             value={specialty}
             onChange={(e) => setSpecialty(e.target.value)}
             className="rounded-md border border-line bg-white px-3.5 py-2.5 outline-none focus:border-deep"
-            placeholder="Ej. Psicología clínica"
+            placeholder={PROFESSIONAL_OPTIONS.find((o) => o.value === professionalType)?.specialty ?? "Ej. Psicología clínica"}
           />
         </div>
 

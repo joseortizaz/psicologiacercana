@@ -16,15 +16,25 @@
 //     "email": "...",
 //     "phone": "...",            // teléfono principal de contacto (obligatorio)
 //     "whatsappNumber": "...",   // número de WhatsApp (obligatorio)
+//     "professionalType": "psychologist" | "psychiatrist",   // obligatorio
 //     "licenseNumber": "...",
 //     "specialty": "...",        // opcional
 //     "clinicName": "..."
 //   }
 //
+// Después de guardar la solicitud se avisa por correo a los administradores
+// (ADMIN_NOTIFY_EMAIL, por defecto admin@ceapsi.com). Un fallo de envío NO
+// invalida la solicitud: solo se deja en el log de la función.
+//
 // Respuesta 200: { requestId }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { buildNewSignupNotificationEmail, sendEmail } from "../_shared/email.ts";
+
+const DEFAULT_ADMIN_NOTIFY_EMAIL = "admin@ceapsi.com";
+const PROFESSIONAL_TYPES = ["psychologist", "psychiatrist"] as const;
+type ProfessionalType = (typeof PROFESSIONAL_TYPES)[number];
 
 const BUCKET = "signup-documents";
 const REQUIRED_DOCUMENTS = ["id-document", "credential-document", "license-document"];
@@ -54,6 +64,7 @@ Deno.serve(async (req: Request) => {
     email?: string;
     phone?: string;
     whatsappNumber?: string;
+    professionalType?: string;
     licenseNumber?: string;
     specialty?: string;
     clinicName?: string;
@@ -65,8 +76,17 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Body inválido, se esperaba JSON" }, 400);
   }
 
-  const { requestId, fullName, email, phone, whatsappNumber, licenseNumber, specialty, clinicName } =
-    payload;
+  const {
+    requestId,
+    fullName,
+    email,
+    phone,
+    whatsappNumber,
+    professionalType,
+    licenseNumber,
+    specialty,
+    clinicName,
+  } = payload;
 
   if (!requestId || !UUID_RE.test(requestId)) {
     return jsonResponse({ error: "requestId inválido" }, 400);
@@ -76,6 +96,10 @@ Deno.serve(async (req: Request) => {
       { error: "fullName, email, licenseNumber y clinicName son requeridos" },
       400,
     );
+  }
+
+  if (!professionalType || !PROFESSIONAL_TYPES.includes(professionalType as ProfessionalType)) {
+    return jsonResponse({ error: "Indica si eres psicólogo o psiquiatra" }, 400);
   }
 
   if (!phone?.trim() || !whatsappNumber?.trim()) {
@@ -156,6 +180,7 @@ Deno.serve(async (req: Request) => {
     email: emailTrimmed,
     phone: phone.trim(),
     whatsapp_number: whatsappNumber.trim(),
+    professional_type: professionalType,
     license_number: licenseNumber.trim(),
     specialty: specialty?.trim() || null,
     clinic_name: clinicName.trim(),
@@ -169,6 +194,24 @@ Deno.serve(async (req: Request) => {
       { error: `No se pudo registrar la solicitud: ${insertError.message}` },
       400,
     );
+  }
+
+  // Aviso interno a los administradores. No bloquea ni revierte la solicitud.
+  const notifyTo = Deno.env.get("ADMIN_NOTIFY_EMAIL")?.trim() || DEFAULT_ADMIN_NOTIFY_EMAIL;
+  const notification = buildNewSignupNotificationEmail({
+    fullName: fullName.trim(),
+    email: emailTrimmed,
+    professionalType: professionalType as ProfessionalType,
+    phone: phone.trim(),
+    whatsappNumber: whatsappNumber.trim(),
+    licenseNumber: licenseNumber.trim(),
+    specialty: specialty?.trim() || null,
+    clinicName: clinicName.trim(),
+    createdAt: new Date().toISOString(),
+  });
+  const notifyResult = await sendEmail({ to: notifyTo, replyTo: emailTrimmed, ...notification });
+  if (!notifyResult.ok) {
+    console.error(`No se pudo enviar el aviso de nueva solicitud ${requestId}: ${notifyResult.error}`);
   }
 
   return jsonResponse({ requestId }, 200);
