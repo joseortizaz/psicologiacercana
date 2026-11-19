@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatAge } from "@/lib/age";
+import { structuredHistoryLines } from "@/lib/psychiatric-history";
 import { logDocumentAccess } from "@/lib/print-audit";
 import {
   downloadClinicalRecordPdf,
@@ -362,6 +363,13 @@ function PrintableRecord({
                   </p>
                 ),
               )}
+              {structuredHistoryLines(clinicalRecord).map((line) => (
+                <p key={line.label} style={{ whiteSpace: "pre-line" }}>
+                  <strong>{line.label}:</strong>
+                  {"\n"}
+                  {line.value}
+                </p>
+              ))}
               {RECORD_SENSITIVE_SECTION_FIELDS.filter((f) => clinicalRecord.sensitive_history?.[f.key]).map(
                 (f) => (
                   <p key={f.key}>

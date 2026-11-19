@@ -2,6 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatAge } from "@/lib/age";
+import {
+  ALL_HISTORY_FIELDS as HISTORY_SECTION_FIELDS,
+  ALL_SENSITIVE_FIELDS as SENSITIVE_SECTION_FIELDS,
+} from "@/lib/psychiatric-history";
+import { HistoryTables } from "@/components/HistoryTables";
 import { DiagnosesList } from "@/components/DiagnosesList";
 import { PrescriptionsList } from "@/components/PrescriptionsList";
 import { EvaluationsList } from "@/components/EvaluationsList";
@@ -17,22 +22,6 @@ import type {
   PatientDiagnosis,
   PrescriptionRecord,
 } from "@/lib/types";
-
-const HISTORY_SECTION_FIELDS: { key: keyof ClinicalHistorySections; label: string }[] = [
-  { key: "personal_history", label: "Historia personal" },
-  { key: "family_history", label: "Antecedentes familiares" },
-  { key: "medical_history", label: "Antecedentes médicos" },
-  { key: "psychiatric_history", label: "Antecedentes psicológicos/psiquiátricos" },
-  { key: "social_history", label: "Historia social" },
-  { key: "mental_status_exam", label: "Examen del estado mental" },
-];
-
-const SENSITIVE_SECTION_FIELDS: { key: keyof ClinicalSensitiveHistory; label: string }[] = [
-  { key: "substance_use", label: "Consumo de sustancias" },
-  { key: "trauma_history", label: "Historia de trauma o abuso" },
-  { key: "risk_history", label: "Riesgo (ideación/intento suicida, autolesión)" },
-  { key: "legal_history", label: "Historia legal" },
-];
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: "Agendada",
@@ -351,6 +340,8 @@ export default async function SupervisorPatientDetailPage({
                 </div>
               </div>
             )}
+
+            <HistoryTables record={clinicalRecord} />
 
             {SENSITIVE_SECTION_FIELDS.some((f) => clinicalRecord.sensitive_history?.[f.key]) && (
               <div className="rounded-lg border border-clay/30 bg-clay/5 p-6">

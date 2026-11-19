@@ -222,6 +222,28 @@ export interface Appointment {
   updated_at: string;
 }
 
+/** Fila de la tabla de antecedentes medicamentosos (historia clínica psiquiátrica). */
+export interface MedicationHistoryRow {
+  category: "psychiatric" | "non_psychiatric";
+  name: string;
+  dose_route: string;
+  start: string;
+  end: string;
+  current: boolean;
+  notes: string;
+}
+
+export type SubstanceHabitKey = "coffee" | "tea" | "tobacco" | "alcohol" | "illegal_drugs";
+
+/** Fila de la tabla de hábitos tóxicos. */
+export interface SubstanceHabitRow {
+  substance: SubstanceHabitKey;
+  uses: boolean;
+  duration: string;
+  quit: string;
+  notes: string;
+}
+
 export interface ClinicalHistorySections {
   personal_history?: string;
   family_history?: string;
@@ -229,6 +251,23 @@ export interface ClinicalHistorySections {
   psychiatric_history?: string;
   social_history?: string;
   mental_status_exam?: string;
+  // Historia clínica psiquiátrica (plantilla de la psiquiatra)
+  current_illness?: string;
+  gyneco_obstetric?: string;
+  life_curve?: string;
+  childhood?: string;
+  adolescence?: string;
+  adulthood?: string;
+  family_perception?: string;
+  self_perception?: string;
+  physical_exam?: string;
+  axis_iv_stressors?: string;
+  axis_v_functioning?: string;
+  psychomotor_crawled?: string;
+  psychomotor_walked?: string;
+  psychomotor_first_words?: string;
+  psychomotor_sphincter_control?: string;
+  medication_history?: MedicationHistoryRow[];
 }
 
 export interface ClinicalSensitiveHistory {
@@ -236,7 +275,19 @@ export interface ClinicalSensitiveHistory {
   trauma_history?: string;
   risk_history?: string;
   legal_history?: string;
+  // Esfera psicosexual
+  sexual_onset?: string;
+  informal_relationships?: string;
+  formal_relationships?: string;
+  same_sex_relationships?: string;
+  sti?: string;
+  substance_habits?: SubstanceHabitRow[];
 }
+
+/** Claves cuyo valor es texto (excluye las tablas estructuradas). */
+export type TextKeys<T> = {
+  [K in keyof T]-?: Exclude<T[K], undefined> extends string ? K : never;
+}[keyof T];
 
 export interface ClinicalRecord {
   id: string;
