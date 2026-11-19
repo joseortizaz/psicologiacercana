@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import { formatAge } from "@/lib/age";
+import { followupEntries } from "@/lib/followup-note";
 import {
   ALL_HISTORY_FIELDS as HISTORY_SECTION_FIELDS,
   ALL_SENSITIVE_FIELDS as SENSITIVE_SECTION_FIELDS,
@@ -259,6 +260,9 @@ export function buildClinicalRecordPdf(
           }`,
         );
         addField("Motivo", c.reason);
+        for (const entry of followupEntries(c)) {
+          addField(entry.label, entry.value);
+        }
         addField("Objetivos", c.objectives);
         addField("Intervenciones", c.interventions);
         addField("Observaciones", c.observations);

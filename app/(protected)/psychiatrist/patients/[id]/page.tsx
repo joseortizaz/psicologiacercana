@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { FollowupNoteView } from "@/components/FollowupNoteView";
 import { formatAge } from "@/lib/age";
 import { PsychiatricHistoryPanel } from "@/components/PsychiatricHistoryPanel";
-import { AddConsultationForm } from "@/components/AddConsultationForm";
+import { AddFollowupNoteForm } from "@/components/AddFollowupNoteForm";
 import { TeamMembersPanel } from "@/components/TeamMembersPanel";
 import { AddDiagnosisForm } from "@/components/AddDiagnosisForm";
 import { DiagnosesList } from "@/components/DiagnosesList";
@@ -98,7 +99,7 @@ export default async function PsychiatristPatientDetailPage({
       ? supabase
           .from("consultations")
           .select(
-            "id, session_date, duration_minutes, modality, session_type, reason, objectives, interventions, techniques_used, observations, homework_tasks, status",
+            "id, session_date, duration_minutes, modality, session_type, reason, objectives, interventions, techniques_used, note_content, observations, homework_tasks, status",
           )
           .eq("clinical_record_id", clinicalRecord.id)
           .order("session_date", { ascending: false })
@@ -320,10 +321,10 @@ export default async function PsychiatristPatientDetailPage({
               record={clinicalRecord}
             />
 
-            <AddConsultationForm
+            <AddFollowupNoteForm
               organizationId={patient.organization_id}
               clinicId={patient.clinic_id}
-              therapistId={user!.id}
+              psychiatristId={user!.id}
               patientId={patient.id}
               clinicalRecordId={clinicalRecord.id}
             />
@@ -350,10 +351,11 @@ export default async function PsychiatristPatientDetailPage({
                     </div>
                     {c.reason && (
                       <p className="mt-2 text-sm text-ink/80">
-                        <span className="font-medium">Motivo: </span>
+                        <span className="font-medium">Motivo de control: </span>
                         {c.reason}
                       </p>
                     )}
+                    <FollowupNoteView consultation={c} />
                     {c.observations && (
                       <p className="mt-1 whitespace-pre-wrap text-sm text-ink/80">
                         <span className="font-medium">Observaciones: </span>
