@@ -399,6 +399,13 @@ export interface PrescriptionItem {
   duration: string | null;
   instructions: string | null;
   is_controlled: boolean;
+  // Campos estructurados de la receta impresa (Decreto 665-12, art. 7).
+  // Null en las recetas registradas antes de existir la impresión.
+  strength: string | null;
+  dosage_form: string | null;
+  route: string | null;
+  units_per_dose: string | null;
+  units_per_day: string | null;
   created_at: string;
   updated_at: string;
 }

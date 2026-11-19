@@ -1,7 +1,17 @@
 import { ExportCsvButton } from "@/components/ExportCsvButton";
+import { PrintPrescriptionButton } from "@/components/PrintPrescriptionButton";
+import type { PrescriptionPrintContext } from "@/lib/prescription-pdf";
 import type { PrescriptionRecord } from "@/lib/types";
 
-export function PrescriptionsList({ records }: { records: PrescriptionRecord[] }) {
+// `print` solo se pasa al psiquiatra prescriptor: únicamente él ve el botón de
+// imprimir, y solo en las recetas que él mismo emitió.
+export function PrescriptionsList({
+  records,
+  print,
+}: {
+  records: PrescriptionRecord[];
+  print?: { currentUserId: string; context: PrescriptionPrintContext };
+}) {
   if (records.length === 0) {
     return <p className="text-sm text-ink/50">Todavía no hay recetas registradas.</p>;
   }
@@ -71,8 +81,11 @@ export function PrescriptionsList({ records }: { records: PrescriptionRecord[] }
               <ul className="mt-2 flex flex-col gap-1.5">
                 {r.items.map((item) => (
                   <li key={item.id} className="text-sm text-ink/80">
-                    <span className="font-medium">{item.medication_name}</span> · {item.dosage} ·{" "}
-                    {item.frequency}
+                    <span className="font-medium">{item.medication_name}</span>
+                    {item.strength ? ` ${item.strength}` : ""}
+                    {item.dosage_form ? ` · ${item.dosage_form}` : ""}
+                    {item.route ? ` · ${item.route}` : ""} · {item.dosage} · {item.frequency}
+                    {item.units_per_day ? ` · ${item.units_per_day} al día` : ""}
                     {item.duration ? ` · ${item.duration}` : ""}
                     {item.is_controlled && (
                       <span className="ml-2 rounded-full bg-clay/10 px-2 py-0.5 text-xs text-clay">
@@ -88,6 +101,10 @@ export function PrescriptionsList({ records }: { records: PrescriptionRecord[] }
             )}
 
             {r.notes && <p className="mt-2 text-sm text-ink/80">{r.notes}</p>}
+
+            {print && r.prescribing_clinician_id === print.currentUserId && (
+              <PrintPrescriptionButton record={r} context={print.context} />
+            )}
           </li>
         ))}
       </ul>

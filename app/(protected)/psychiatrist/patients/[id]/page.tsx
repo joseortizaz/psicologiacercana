@@ -135,7 +135,7 @@ export default async function PsychiatristPatientDetailPage({
       ? supabase
           .from("prescription_records")
           .select(
-            "id, organization_id, clinic_id, patient_id, clinical_record_id, prescribing_clinician_id, issued_at, diagnosis_id, notes, created_at, updated_at, prescribing_clinician:profiles!prescription_records_prescribing_clinician_id_fkey(full_name), items:prescription_items(id, organization_id, clinic_id, clinical_record_id, prescription_record_id, medication_name, dosage, frequency, duration, instructions, is_controlled, created_at, updated_at)",
+            "id, organization_id, clinic_id, patient_id, clinical_record_id, prescribing_clinician_id, issued_at, diagnosis_id, notes, created_at, updated_at, prescribing_clinician:profiles!prescription_records_prescribing_clinician_id_fkey(full_name), items:prescription_items(id, organization_id, clinic_id, clinical_record_id, prescription_record_id, medication_name, dosage, frequency, duration, instructions, is_controlled, strength, dosage_form, route, units_per_dose, units_per_day, created_at, updated_at)",
           )
           .eq("clinical_record_id", clinicalRecord.id)
           .order("issued_at", { ascending: false })
@@ -160,6 +160,25 @@ export default async function PsychiatristPatientDetailPage({
     .eq("therapist_id", user!.id)
     .order("start_time", { ascending: false })
     .returns<Appointment[]>();
+
+  const [{ data: prescriber }, { data: clinic }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("full_name, license_number, specialty")
+      .eq("id", user!.id)
+      .single<{ full_name: string; license_number: string | null; specialty: string | null }>(),
+    supabase
+      .from("clinics")
+      .select("name, address, phone, email, logo_url")
+      .eq("id", patient.clinic_id)
+      .maybeSingle<{
+        name: string;
+        address: string | null;
+        phone: string | null;
+        email: string | null;
+        logo_url: string | null;
+      }>(),
+  ]);
 
   const isOwnPatient = patient.primary_therapist_id === user!.id;
 
@@ -373,7 +392,17 @@ export default async function PsychiatristPatientDetailPage({
               prescribingClinicianId={user!.id}
             />
 
-            <PrescriptionsList records={prescriptions ?? []} />
+            <PrescriptionsList
+              records={prescriptions ?? []}
+              print={
+                prescriber
+                  ? {
+                      currentUserId: user!.id,
+                      context: { clinic: clinic ?? null, prescriber, patientName: patient.full_name },
+                    }
+                  : undefined
+              }
+            />
           </section>
 
           <section className="flex flex-col gap-4">
