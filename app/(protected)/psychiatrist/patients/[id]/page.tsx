@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatAge } from "@/lib/age";
-import { ClinicalRecordPanel } from "@/components/ClinicalRecordPanel";
+import { PsychiatricHistoryPanel } from "@/components/PsychiatricHistoryPanel";
 import { AddConsultationForm } from "@/components/AddConsultationForm";
 import { TeamMembersPanel } from "@/components/TeamMembersPanel";
 import { AddDiagnosisForm } from "@/components/AddDiagnosisForm";
@@ -264,11 +264,13 @@ export default async function PsychiatristPatientDetailPage({
       {!clinicalRecord && isOwnPatient ? (
         <section className="flex flex-col gap-4">
           <p className="font-display text-xl text-deep">Expediente clínico</p>
-          <ClinicalRecordPanel
+          <PsychiatricHistoryPanel
             organizationId={patient.organization_id}
             clinicId={patient.clinic_id}
             therapistId={user!.id}
             patientId={patient.id}
+            patientCategory={patient.category}
+            dateOfBirth={patient.date_of_birth}
             record={null}
           />
         </section>
@@ -287,13 +289,15 @@ export default async function PsychiatristPatientDetailPage({
           </section>
 
           <section className="flex flex-col gap-4">
-            <p className="font-display text-xl text-deep">Expediente clínico y notas de sesión</p>
+            <p className="font-display text-xl text-deep">Historia clínica y notas de sesión</p>
 
-            <ClinicalRecordPanel
+            <PsychiatricHistoryPanel
               organizationId={patient.organization_id}
               clinicId={patient.clinic_id}
               therapistId={user!.id}
               patientId={patient.id}
+              patientCategory={patient.category}
+              dateOfBirth={patient.date_of_birth}
               record={clinicalRecord}
             />
 

@@ -1,9 +1,15 @@
 import { jsPDF } from "jspdf";
 import { formatAge } from "@/lib/age";
+import {
+  ALL_HISTORY_FIELDS as HISTORY_SECTION_FIELDS,
+  ALL_SENSITIVE_FIELDS as SENSITIVE_SECTION_FIELDS,
+  structuredHistoryLines,
+} from "@/lib/psychiatric-history";
 import type {
   ClinicalHistorySections,
   ClinicalRecord,
   ClinicalSensitiveHistory,
+  TextKeys,
   Consultation,
   Patient,
   PatientDiagnosis,
@@ -54,22 +60,6 @@ const DIAGNOSIS_STATUS_LABELS: Record<string, string> = {
   en_remisión: "En remisión",
   descartado: "Descartado",
 };
-
-const HISTORY_SECTION_FIELDS: { key: keyof ClinicalHistorySections; label: string }[] = [
-  { key: "personal_history", label: "Historia personal" },
-  { key: "family_history", label: "Antecedentes familiares" },
-  { key: "medical_history", label: "Antecedentes médicos" },
-  { key: "psychiatric_history", label: "Antecedentes psicológicos/psiquiátricos" },
-  { key: "social_history", label: "Historia social" },
-  { key: "mental_status_exam", label: "Examen del estado mental" },
-];
-
-const SENSITIVE_SECTION_FIELDS: { key: keyof ClinicalSensitiveHistory; label: string }[] = [
-  { key: "substance_use", label: "Consumo de sustancias" },
-  { key: "trauma_history", label: "Historia de trauma o abuso" },
-  { key: "risk_history", label: "Riesgo (ideación/intento suicida, autolesión)" },
-  { key: "legal_history", label: "Historia legal" },
-];
 
 function formatDateOnly(dateStr: string) {
   return new Date(`${dateStr}T00:00:00`).toLocaleDateString("es-MX", { dateStyle: "long" });
@@ -235,6 +225,9 @@ export function buildClinicalRecordPdf(
       }
       for (const f of HISTORY_SECTION_FIELDS) {
         addField(f.label, clinicalRecord.history_sections?.[f.key]);
+      }
+      for (const line of structuredHistoryLines(clinicalRecord)) {
+        addField(line.label, line.value);
       }
       for (const f of SENSITIVE_SECTION_FIELDS) {
         addField(f.label, clinicalRecord.sensitive_history?.[f.key]);

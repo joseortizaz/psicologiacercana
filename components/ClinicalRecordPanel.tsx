@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { HistoryTables } from "@/components/HistoryTables";
+import { ALL_HISTORY_FIELDS, ALL_SENSITIVE_FIELDS } from "@/lib/psychiatric-history";
 import type {
   CaseStatus,
   ClinicalHistorySections,
   ClinicalRecord,
   ClinicalSensitiveHistory,
+  TextKeys,
 } from "@/lib/types";
 
 const STATUS_OPTIONS: { value: CaseStatus; label: string }[] = [
@@ -24,7 +27,7 @@ const STATUS_LABELS: Record<CaseStatus, string> = {
   discharged: "Dado de alta",
 };
 
-const HISTORY_SECTION_FIELDS: { key: keyof ClinicalHistorySections; label: string }[] = [
+const HISTORY_SECTION_FIELDS: { key: TextKeys<ClinicalHistorySections>; label: string }[] = [
   { key: "personal_history", label: "Historia personal" },
   { key: "family_history", label: "Antecedentes familiares" },
   { key: "medical_history", label: "Antecedentes médicos" },
@@ -33,7 +36,7 @@ const HISTORY_SECTION_FIELDS: { key: keyof ClinicalHistorySections; label: strin
   { key: "mental_status_exam", label: "Examen del estado mental" },
 ];
 
-const SENSITIVE_SECTION_FIELDS: { key: keyof ClinicalSensitiveHistory; label: string }[] = [
+const SENSITIVE_SECTION_FIELDS: { key: TextKeys<ClinicalSensitiveHistory>; label: string }[] = [
   { key: "substance_use", label: "Consumo de sustancias" },
   { key: "trauma_history", label: "Historia de trauma o abuso" },
   { key: "risk_history", label: "Riesgo (ideación/intento suicida, autolesión)" },
@@ -54,6 +57,18 @@ function sectionsToPayload<T extends Record<string, string>>(sections: T): T {
   return Object.fromEntries(
     Object.entries(sections).filter(([, v]) => v && v.trim().length > 0),
   ) as T;
+}
+
+// Conserva las claves que este panel no edita (p. ej. las de la historia
+// psiquiátrica) y reemplaza solo las que sí muestra.
+function mergeSections<T extends object>(
+  existing: T | undefined,
+  fields: { key: string }[],
+  edited: Record<string, string>,
+): T {
+  const base: Record<string, unknown> = { ...(existing ?? {}) };
+  for (const f of fields) delete base[f.key];
+  return { ...base, ...sectionsToPayload(edited) } as T;
 }
 
 function initSections<K extends string>(
@@ -130,8 +145,8 @@ export function ClinicalRecordPanel({
       treatment_plan: treatmentPlan || null,
       medications: parseList(medications),
       allergies: parseList(allergies),
-      history_sections: sectionsToPayload(historySections),
-      sensitive_history: sectionsToPayload(sensitiveHistory),
+      history_sections: mergeSections(record?.history_sections, HISTORY_SECTION_FIELDS, historySections),
+      sensitive_history: mergeSections(record?.sensitive_history, SENSITIVE_SECTION_FIELDS, sensitiveHistory),
       discharge_date: status === "discharged" ? dischargeDate : null,
       discharge_summary: status === "discharged" ? dischargeSummary || null : null,
     };
@@ -176,10 +191,10 @@ export function ClinicalRecordPanel({
   }
 
   if (!editing) {
-    const presentHistory = HISTORY_SECTION_FIELDS.filter(
+    const presentHistory = ALL_HISTORY_FIELDS.filter(
       (f) => record!.history_sections?.[f.key],
     );
-    const presentSensitive = SENSITIVE_SECTION_FIELDS.filter(
+    const presentSensitive = ALL_SENSITIVE_FIELDS.filter(
       (f) => record!.sensitive_history?.[f.key],
     );
 
@@ -288,6 +303,8 @@ export function ClinicalRecordPanel({
             </div>
           </div>
         )}
+
+        <HistoryTables record={record!} />
 
         {presentSensitive.length > 0 && (
           <div className="rounded-lg border border-clay/30 bg-clay/5 p-6">
