@@ -169,6 +169,36 @@ export function buildApprovalEmail(params: {
 // Aviso INTERNO a los administradores cuando llega una solicitud nueva.
 // No incluye ni enlaza los documentos adjuntos (son privados): se revisan en
 // el panel. Todo dato escrito por el solicitante se escapa.
+// Enlace nuevo para entrar (crear o restablecer contraseña). Lo envía el
+// super_admin cuando la invitación original caducó o nunca llegó.
+export function buildAccessLinkEmail(params: {
+  fullName: string;
+  link: string;
+}): { subject: string; html: string; text: string } {
+  const html = layout(
+    "Tu enlace de acceso a Cercana",
+    `<p>Hola ${escapeHtml(params.fullName)},</p>
+     <p>Te enviamos un enlace nuevo para que crees tu contraseña y entres a Cercana.</p>
+     <p style="margin:24px 0;">
+       <a href="${escapeHtml(params.link)}" style="background:#173A3F;color:#FAF7F2;text-decoration:none;padding:12px 20px;border-radius:6px;font-weight:bold;display:inline-block;">Crear mi contraseña</a>
+     </p>
+     <p><strong>Importante:</strong> el enlace es de un solo uso y vence pronto. Ábrelo en cuanto lo recibas, directamente en tu navegador. Si ya no funciona, entra a ${escapeHtml(appUrl())}/login y usa «¿Olvidaste tu contraseña?».</p>`,
+  );
+
+  const text = [
+    `Hola ${params.fullName},`,
+    "",
+    "Te enviamos un enlace nuevo para que crees tu contraseña y entres a Cercana:",
+    params.link,
+    "",
+    `El enlace es de un solo uso y vence pronto. Ábrelo en cuanto lo recibas. Si ya no funciona, entra a ${appUrl()}/login y usa «¿Olvidaste tu contraseña?».`,
+    "",
+    `¿Dudas? Escríbenos a ${supportEmail()}.`,
+  ].join("\n");
+
+  return { subject: "Tu enlace de acceso a Cercana", html, text };
+}
+
 export function buildNewSignupNotificationEmail(params: {
   fullName: string;
   email: string;
