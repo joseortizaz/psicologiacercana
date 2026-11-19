@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EditOrganizationForm } from "@/components/EditOrganizationForm";
+import { ResendAccessPanel, type AccessUser } from "@/components/ResendAccessPanel";
 import { SubscriptionPanel, type OrgContact } from "@/components/SubscriptionPanel";
 import type { Organization, SubscriptionPayment } from "@/lib/types";
 
@@ -59,6 +60,14 @@ export default async function EditOrganizationPage({ params }: { params: { id: s
     .limit(5)
     .returns<OrgContact[]>();
 
+  const { data: accessUsers } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, role")
+    .eq("organization_id", organization.id)
+    .eq("active", true)
+    .order("created_at", { ascending: true })
+    .returns<AccessUser[]>();
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -80,6 +89,8 @@ export default async function EditOrganizationPage({ params }: { params: { id: s
         payments={payments ?? []}
         contacts={contacts ?? []}
       />
+
+      <ResendAccessPanel users={accessUsers ?? []} />
 
       <EditOrganizationForm organization={organization} plans={plans ?? []} />
     </div>
