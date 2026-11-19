@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { formatAge } from "@/lib/age";
 import { logDocumentAccess } from "@/lib/print-audit";
 import {
   downloadClinicalRecordPdf,
@@ -284,7 +285,7 @@ function PrintableRecord({
             <strong>Categoría:</strong> {RECORD_CATEGORY_LABELS[patient.category] ?? patient.category}
           </p>
           <p>
-            <strong>Nacimiento:</strong> {formatRecordDateOnly(patient.date_of_birth)}
+            <strong>Nacimiento:</strong> {formatRecordDateOnly(patient.date_of_birth)} ({formatAge(patient.date_of_birth)})
           </p>
           {patient.gender && (
             <p>

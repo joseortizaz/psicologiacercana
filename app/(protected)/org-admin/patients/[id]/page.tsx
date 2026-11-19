@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { formatAge } from "@/lib/age";
 import { ScheduleAppointmentForm } from "@/components/ScheduleAppointmentForm";
 import { AppointmentStatusButtons } from "@/components/AppointmentStatusButtons";
 import { AdminPrintExportRecordButton } from "@/components/PrintExportRecordButton";
@@ -96,7 +97,7 @@ export default async function OrgAdminPatientDetailPage({ params }: { params: { 
 
         <div className="mt-4 grid gap-x-6 gap-y-2 text-sm text-ink/70 sm:grid-cols-3">
           <p>Categoría: {CATEGORY_LABELS[patient.category] ?? patient.category}</p>
-          <p>Nacimiento: {formatDateOnly(patient.date_of_birth)}</p>
+          <p>Nacimiento: {formatDateOnly(patient.date_of_birth)} · Edad: {formatAge(patient.date_of_birth)}</p>
           <p>Género: {patient.gender ?? "—"}</p>
           <p>Correo: {patient.contact_email ?? "—"}</p>
           <p>Teléfono: {patient.contact_phone ?? "—"}</p>
