@@ -121,7 +121,7 @@ export default async function SupervisorPatientDetailPage({
         supabase
           .from("prescription_records")
           .select(
-            "id, organization_id, clinic_id, patient_id, clinical_record_id, prescribing_clinician_id, issued_at, diagnosis_id, notes, created_at, updated_at, prescribing_clinician:profiles!prescription_records_prescribing_clinician_id_fkey(full_name), items:prescription_items(id, organization_id, clinic_id, clinical_record_id, prescription_record_id, medication_name, dosage, frequency, duration, instructions, is_controlled, created_at, updated_at)",
+            "id, organization_id, clinic_id, patient_id, clinical_record_id, prescribing_clinician_id, issued_at, diagnosis_id, notes, created_at, updated_at, prescribing_clinician:profiles!prescription_records_prescribing_clinician_id_fkey(full_name), items:prescription_items(id, organization_id, clinic_id, clinical_record_id, prescription_record_id, medication_name, dosage, frequency, duration, instructions, is_controlled, strength, dosage_form, route, units_per_dose, units_per_day, created_at, updated_at)",
           )
           .eq("clinical_record_id", clinicalRecord.id)
           .order("issued_at", { ascending: false })

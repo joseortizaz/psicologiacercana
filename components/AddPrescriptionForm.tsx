@@ -4,10 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+const DOSAGE_FORMS = ["Tableta", "Cápsula", "Jarabe", "Solución oral", "Gotas", "Inyectable", "Parche", "Crema", "Supositorio"];
+const ROUTES = ["Oral", "Sublingual", "Intramuscular", "Intravenosa", "Subcutánea", "Tópica", "Rectal", "Inhalatoria"];
+
 interface ItemDraft {
   medication_name: string;
-  dosage: string;
+  strength: string;
+  dosage_form: string;
+  route: string;
+  units_per_dose: string;
   frequency: string;
+  units_per_day: string;
   duration: string;
   instructions: string;
   is_controlled: boolean;
@@ -15,8 +22,12 @@ interface ItemDraft {
 
 const EMPTY_ITEM: ItemDraft = {
   medication_name: "",
-  dosage: "",
+  strength: "",
+  dosage_form: "",
+  route: "",
+  units_per_dose: "",
   frequency: "",
+  units_per_day: "",
   duration: "",
   instructions: "",
   is_controlled: false,
@@ -60,11 +71,34 @@ export function AddPrescriptionForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const validItems = items.filter((it) => it.medication_name.trim() && it.dosage.trim() && it.frequency.trim());
-    if (validItems.length === 0) {
-      setError("Agrega al menos un medicamento con nombre, dosis y frecuencia.");
+    const filled = items.filter((it) => it.medication_name.trim());
+    if (filled.length === 0) {
+      setError("Agrega al menos un medicamento.");
       return;
     }
+    // La receta impresa exige estos datos (Decreto 665-12, art. 7). Un
+    // medicamento controlado solo se registra como historial interno (no se
+    // imprime), así que a ese no se le exige el detalle completo.
+    const incomplete = filled.find(
+      (it) =>
+        !it.is_controlled &&
+        !(
+          it.strength.trim() &&
+          it.dosage_form.trim() &&
+          it.route.trim() &&
+          it.units_per_dose.trim() &&
+          it.frequency.trim() &&
+          it.units_per_day.trim() &&
+          it.duration.trim()
+        ),
+    );
+    if (incomplete) {
+      setError(
+        `Completa los datos de "${incomplete.medication_name}": concentración, forma, vía, cantidad por toma, frecuencia, cantidad por día y duración.`,
+      );
+      return;
+    }
+    const validItems = filled;
 
     setLoading(true);
     setError(null);
@@ -92,8 +126,17 @@ export function AddPrescriptionForm({
       validItems.map((it) => ({
         prescription_record_id: record.id,
         medication_name: it.medication_name,
-        dosage: it.dosage,
-        frequency: it.frequency,
+        // `dosage` es obligatorio en la tabla y lo usan las vistas anteriores:
+        // se arma con la cantidad por toma y la concentración.
+        dosage: [it.units_per_dose.trim(), it.strength.trim() && `(${it.strength.trim()})`]
+          .filter(Boolean)
+          .join(" ") || "—",
+        strength: it.strength || null,
+        dosage_form: it.dosage_form || null,
+        route: it.route || null,
+        units_per_dose: it.units_per_dose || null,
+        units_per_day: it.units_per_day || null,
+        frequency: it.frequency || "—",
         duration: it.duration || null,
         instructions: it.instructions || null,
         is_controlled: it.is_controlled,
@@ -118,12 +161,24 @@ export function AddPrescriptionForm({
       className="flex flex-col gap-4 rounded-lg border border-line bg-white/60 p-6"
     >
       <div>
-        <p className="font-display text-lg text-deep">Nueva receta (registro interno)</p>
+        <p className="font-display text-lg text-deep">Nueva receta</p>
         <p className="text-xs text-ink/50">
-          Esto es solo un histórico consultable desde el Portal — no sustituye la receta física
-          que entregas al paciente y no tiene validez legal por sí sola.
+          Después de guardarla puedes imprimirla en tamaño A6 para firmarla y sellarla a mano; no
+          lleva firma electrónica. Los medicamentos controlados no se imprimen: se registran solo
+          como historial y deben prescribirse en el recetario oficial de la DNCD.
         </p>
       </div>
+
+      <datalist id="dosage-forms">
+        {DOSAGE_FORMS.map((f) => (
+          <option key={f} value={f} />
+        ))}
+      </datalist>
+      <datalist id="routes">
+        {ROUTES.map((r) => (
+          <option key={r} value={r} />
+        ))}
+      </datalist>
 
       <div className="flex flex-col gap-3">
         {items.map((item, i) => (
@@ -138,12 +193,41 @@ export function AddPrescriptionForm({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-ink/80">Dosis</label>
+              <label className="text-sm font-medium text-ink/80">Concentración</label>
               <input
-                value={item.dosage}
-                onChange={(e) => updateItem(i, { dosage: e.target.value })}
+                value={item.strength}
+                onChange={(e) => updateItem(i, { strength: e.target.value })}
                 className={inputClass}
                 placeholder="50 mg"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-ink/80">Forma farmacéutica</label>
+              <input
+                list="dosage-forms"
+                value={item.dosage_form}
+                onChange={(e) => updateItem(i, { dosage_form: e.target.value })}
+                className={inputClass}
+                placeholder="Tableta"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-ink/80">Vía</label>
+              <input
+                list="routes"
+                value={item.route}
+                onChange={(e) => updateItem(i, { route: e.target.value })}
+                className={inputClass}
+                placeholder="Oral"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-ink/80">Cantidad por toma</label>
+              <input
+                value={item.units_per_dose}
+                onChange={(e) => updateItem(i, { units_per_dose: e.target.value })}
+                className={inputClass}
+                placeholder="1 tableta"
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -152,11 +236,20 @@ export function AddPrescriptionForm({
                 value={item.frequency}
                 onChange={(e) => updateItem(i, { frequency: e.target.value })}
                 className={inputClass}
-                placeholder="Cada 24 horas"
+                placeholder="Cada 24 horas, en la noche"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-ink/80">Duración (opcional)</label>
+              <label className="text-sm font-medium text-ink/80">Cantidad por día</label>
+              <input
+                value={item.units_per_day}
+                onChange={(e) => updateItem(i, { units_per_day: e.target.value })}
+                className={inputClass}
+                placeholder="1 tableta"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-ink/80">Duración</label>
               <input
                 value={item.duration}
                 onChange={(e) => updateItem(i, { duration: e.target.value })}
@@ -205,7 +298,7 @@ export function AddPrescriptionForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-ink/80">Notas (opcional)</label>
+        <label className="text-sm font-medium text-ink/80">Indicaciones generales (opcional)</label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
