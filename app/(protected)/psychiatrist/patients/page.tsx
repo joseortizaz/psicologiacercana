@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ExportCsvButton } from "@/components/ExportCsvButton";
+import { CreatePatientForm } from "@/components/CreatePatientForm";
+import { ImportPatientsCsv } from "@/components/ImportPatientsCsv";
+import type { Profile } from "@/lib/types";
 
 const PATIENT_EXPORT_COLUMNS: { key: "full_name" | "category" | "active"; label: string }[] = [
   { key: "full_name", label: "Nombre" },
@@ -36,6 +39,20 @@ export default async function PsychiatristPatientsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, organization_id, clinic_id")
+    .eq("id", user!.id)
+    .single<Profile>();
+
+  // Pacientes propios (dados de alta por el psiquiatra) + pacientes de
+  // expedientes donde es miembro del equipo de atención.
+  const { data: ownPatients } = await supabase
+    .from("patients")
+    .select("id, full_name, category, active")
+    .eq("primary_therapist_id", user!.id)
+    .returns<{ id: string; full_name: string; category: string; active: boolean }[]>();
+
   const { data: teamRows } = await supabase
     .from("clinical_record_team_members")
     .select(
@@ -45,20 +62,38 @@ export default async function PsychiatristPatientsPage() {
     .eq("active", true)
     .returns<TeamRow[]>();
 
-  const patients = (teamRows ?? [])
-    .map((row) => row.clinical_record?.patient)
-    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+  const byId = new Map<string, { id: string; full_name: string; category: string; active: boolean }>();
+  for (const p of ownPatients ?? []) byId.set(p.id, p);
+  for (const row of teamRows ?? []) {
+    const p = row.clinical_record?.patient;
+    if (p) byId.set(p.id, p);
+  }
+  const patients = Array.from(byId.values()).sort((a, b) =>
+    a.full_name.localeCompare(b.full_name, "es"),
+  );
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3">
         <p className="font-display text-2xl text-deep">Pacientes</p>
-        <ExportCsvButton
-          rows={patients}
-          columns={PATIENT_EXPORT_COLUMNS}
-          filename="pacientes.csv"
-          auditTable="patients"
-        />
+        <div className="flex flex-wrap items-start gap-3">
+          <ExportCsvButton
+            rows={patients}
+            columns={PATIENT_EXPORT_COLUMNS}
+            filename="pacientes.csv"
+            auditTable="patients"
+          />
+          <ImportPatientsCsv
+            organizationId={profile!.organization_id!}
+            clinicId={profile!.clinic_id!}
+            therapistId={user!.id}
+          />
+          <CreatePatientForm
+            organizationId={profile!.organization_id!}
+            clinicId={profile!.clinic_id!}
+            therapistId={user!.id}
+          />
+        </div>
       </div>
 
       {patients.length > 0 ? (
@@ -98,8 +133,8 @@ export default async function PsychiatristPatientsPage() {
         </div>
       ) : (
         <p className="text-sm text-ink/50">
-          Todavía no eres miembro del equipo de atención de ningún expediente. Pídele al terapeuta
-          a cargo que te agregue desde el expediente del paciente.
+          Todavía no tienes pacientes. Registra uno con «Nuevo paciente» o pídele al terapeuta a
+          cargo que te agregue al equipo de atención de un expediente.
         </p>
       )}
     </div>
