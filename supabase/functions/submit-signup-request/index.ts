@@ -23,7 +23,7 @@
 //   }
 //
 // Después de guardar la solicitud se avisa por correo a los administradores
-// (ADMIN_NOTIFY_EMAIL, por defecto admin@ceapsi.com). Un fallo de envío NO
+// (ADMIN_NOTIFY_EMAIL, por defecto admin@ceapsird.com). Un fallo de envío NO
 // invalida la solicitud: solo se deja en el log de la función.
 //
 // Respuesta 200: { requestId }
@@ -32,7 +32,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { buildNewSignupNotificationEmail, sendEmail } from "../_shared/email.ts";
 
-const DEFAULT_ADMIN_NOTIFY_EMAIL = "admin@ceapsi.com";
+const DEFAULT_ADMIN_NOTIFY_EMAIL = "admin@ceapsird.com";
 const PROFESSIONAL_TYPES = ["psychologist", "psychiatrist"] as const;
 type ProfessionalType = (typeof PROFESSIONAL_TYPES)[number];
 

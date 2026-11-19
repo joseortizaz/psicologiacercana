@@ -10,8 +10,12 @@ import { AddPrescriptionForm } from "@/components/AddPrescriptionForm";
 import { PrescriptionsList } from "@/components/PrescriptionsList";
 import { EvaluationsList } from "@/components/EvaluationsList";
 import { PrintExportRecordButton } from "@/components/PrintExportRecordButton";
+import { ScheduleAppointmentForm } from "@/components/ScheduleAppointmentForm";
+import { AppointmentStatusButtons } from "@/components/AppointmentStatusButtons";
+import { EditPatientForm } from "@/components/EditPatientForm";
 import { CARE_TEAM_ROLES } from "@/lib/roles";
 import type {
+  Appointment,
   ClinicalRecord,
   ClinicalRecordTeamMember,
   Consultation,
@@ -25,6 +29,14 @@ const CATEGORY_LABELS: Record<string, string> = {
   child: "Niño/a",
   adolescent: "Adolescente",
   adult: "Adulto",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  scheduled: "Agendada",
+  confirmed: "Confirmada",
+  completed: "Completada",
+  cancelled: "Cancelada",
+  no_show: "No asistió",
 };
 
 const MODALITY_LABELS: Record<string, string> = {
@@ -51,7 +63,7 @@ export default async function PsychiatristPatientDetailPage({
   const { data: patient } = await supabase
     .from("patients")
     .select(
-      "id, organization_id, clinic_id, full_name, date_of_birth, category, contact_email, contact_phone, active, primary_therapist_id",
+      "id, organization_id, clinic_id, full_name, date_of_birth, category, national_id, gender, contact_phone, contact_email, address, occupation, education_level, referred_by, insurance_provider, insurance_policy_number, guardian_name, guardian_relationship, guardian_phone, guardian_national_id, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, active, primary_therapist_id",
     )
     .eq("id", params.id)
     .single<Patient>();
@@ -140,6 +152,16 @@ export default async function PsychiatristPatientDetailPage({
       : Promise.resolve({ data: [] as EvaluationReport[] }),
   ]);
 
+  const { data: appointments } = await supabase
+    .from("appointments")
+    .select("id, start_time, end_time, modality, session_type, status")
+    .eq("patient_id", patient.id)
+    .eq("therapist_id", user!.id)
+    .order("start_time", { ascending: false })
+    .returns<Appointment[]>();
+
+  const isOwnPatient = patient.primary_therapist_id === user!.id;
+
   const memberIds = new Set((teamMembers ?? []).map((m) => m.clinician_id));
   const candidates = (clinicStaff ?? []).filter((s) => !memberIds.has(s.id));
 
@@ -182,9 +204,74 @@ export default async function PsychiatristPatientDetailPage({
           <p>Correo: {patient.contact_email ?? "—"}</p>
           <p>Teléfono: {patient.contact_phone ?? "—"}</p>
         </div>
+
+        <div className="mt-4 border-t border-line pt-4">
+          <EditPatientForm patient={patient} />
+        </div>
       </section>
 
-      {!clinicalRecord ? (
+      <section className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <p className="font-display text-xl text-deep">Citas</p>
+          <ScheduleAppointmentForm
+            organizationId={patient.organization_id}
+            clinicId={patient.clinic_id}
+            therapistId={user!.id}
+            patientId={patient.id}
+          />
+        </div>
+
+        {appointments && appointments.length > 0 ? (
+          <div className="overflow-hidden rounded-lg border border-line bg-white/60">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-line text-xs uppercase tracking-wide text-ink/40">
+                  <th className="px-5 py-3 font-medium">Fecha</th>
+                  <th className="px-5 py-3 font-medium">Modalidad</th>
+                  <th className="px-5 py-3 font-medium">Estado</th>
+                  <th className="px-5 py-3 font-medium">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map((appt) => (
+                  <tr key={appt.id} className="border-b border-line last:border-0">
+                    <td className="px-5 py-3.5 text-ink/70">
+                      {new Date(appt.start_time).toLocaleString("es-MX", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </td>
+                    <td className="px-5 py-3.5 text-ink/70">
+                      {MODALITY_LABELS[appt.modality] ?? appt.modality}
+                    </td>
+                    <td className="px-5 py-3.5 text-ink/70">
+                      {STATUS_LABELS[appt.status] ?? appt.status}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <AppointmentStatusButtons appointmentId={appt.id} status={appt.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-ink/50">Sin citas registradas todavía.</p>
+        )}
+      </section>
+
+      {!clinicalRecord && isOwnPatient ? (
+        <section className="flex flex-col gap-4">
+          <p className="font-display text-xl text-deep">Expediente clínico</p>
+          <ClinicalRecordPanel
+            organizationId={patient.organization_id}
+            clinicId={patient.clinic_id}
+            therapistId={user!.id}
+            patientId={patient.id}
+            record={null}
+          />
+        </section>
+      ) : !clinicalRecord ? (
         <p className="text-sm text-ink/50">
           Todavía no eres miembro del equipo de atención del expediente de este paciente.
         </p>

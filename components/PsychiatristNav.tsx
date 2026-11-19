@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/psychiatrist", label: "Inicio" },
   { href: "/psychiatrist/patients", label: "Pacientes" },
+  { href: "/psychiatrist/appointments", label: "Citas" },
 ];
 
 export function PsychiatristNav() {
