@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatAge } from "@/lib/age";
+import { followupEntries } from "@/lib/followup-note";
 import { structuredHistoryLines } from "@/lib/psychiatric-history";
 import { logDocumentAccess } from "@/lib/print-audit";
 import {
@@ -405,6 +406,11 @@ function PrintableRecord({
                     <strong>Motivo:</strong> {c.reason}
                   </p>
                 )}
+                {followupEntries(c).map((entry) => (
+                  <p key={entry.key} style={{ whiteSpace: "pre-wrap" }}>
+                    <strong>{entry.label}:</strong> {entry.value}
+                  </p>
+                ))}
                 {c.objectives && (
                   <p>
                     <strong>Objetivos:</strong> {c.objectives}

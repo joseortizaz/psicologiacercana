@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { FollowupNoteView } from "@/components/FollowupNoteView";
 import { formatAge } from "@/lib/age";
 import { ScheduleAppointmentForm } from "@/components/ScheduleAppointmentForm";
 import { AppointmentStatusButtons } from "@/components/AppointmentStatusButtons";
@@ -95,7 +96,7 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
     ? await supabase
         .from("consultations")
         .select(
-          "id, session_date, duration_minutes, modality, session_type, reason, objectives, interventions, techniques_used, observations, homework_tasks, status",
+          "id, session_date, duration_minutes, modality, session_type, reason, objectives, interventions, techniques_used, note_content, observations, homework_tasks, status",
         )
         .eq("clinical_record_id", clinicalRecord.id)
         .order("session_date", { ascending: false })
@@ -365,6 +366,7 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
                         {c.interventions}
                       </p>
                     )}
+                    <FollowupNoteView consultation={c} />
                     {c.observations && (
                       <p className="mt-1 whitespace-pre-wrap text-sm text-ink/80">
                         <span className="font-medium">Observaciones: </span>

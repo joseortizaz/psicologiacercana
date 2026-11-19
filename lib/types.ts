@@ -325,6 +325,16 @@ export interface ClinicalRecordTeamMember {
   clinician?: Pick<Profile, "id" | "full_name" | "role" | "email"> | null;
 }
 
+/** Contenido de la nota de seguimiento psiquiátrico (consultations.note_content). */
+export interface FollowupNoteContent {
+  subjective_evolution?: string;
+  medication_adherence?: string;
+  mental_status_exam?: string;
+  physical_exam?: string;
+  risk_assessment?: string;
+  management_plan?: string;
+}
+
 export interface Consultation {
   id: string;
   organization_id: string;
@@ -342,6 +352,7 @@ export interface Consultation {
   interventions: string | null;
   techniques_used: string[];
   note_format: NoteFormat;
+  note_content?: FollowupNoteContent;
   homework_tasks: string | null;
   next_appointment_date: string | null;
   observations: string | null;

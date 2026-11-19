@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatAge } from "@/lib/age";
+import { FollowupNoteView } from "@/components/FollowupNoteView";
 import {
   ALL_HISTORY_FIELDS as HISTORY_SECTION_FIELDS,
   ALL_SENSITIVE_FIELDS as SENSITIVE_SECTION_FIELDS,
@@ -101,7 +102,7 @@ export default async function SupervisorPatientDetailPage({
     ? await supabase
         .from("consultations")
         .select(
-          "id, session_date, duration_minutes, modality, session_type, reason, objectives, interventions, observations, homework_tasks, status, therapist:profiles!consultations_therapist_id_fkey(full_name)",
+          "id, session_date, duration_minutes, modality, session_type, reason, objectives, interventions, note_content, observations, homework_tasks, status, therapist:profiles!consultations_therapist_id_fkey(full_name)",
         )
         .eq("clinical_record_id", clinicalRecord.id)
         .order("session_date", { ascending: false })
@@ -402,6 +403,7 @@ export default async function SupervisorPatientDetailPage({
                       {c.interventions}
                     </p>
                   )}
+                  <FollowupNoteView consultation={c} />
                   {c.observations && (
                     <p className="mt-1 whitespace-pre-wrap text-sm text-ink/80">
                       <span className="font-medium">Observaciones: </span>
