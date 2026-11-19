@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { formatAge } from "@/lib/age";
 import type {
   ClinicalHistorySections,
   ClinicalRecord,
@@ -181,7 +182,10 @@ export function buildClinicalRecordPdf(
     addTitle("Datos del paciente");
     addField("Nombre completo", patient.full_name);
     addField("Categoría", CATEGORY_LABELS[patient.category] ?? patient.category);
-    addField("Fecha de nacimiento", formatDateOnly(patient.date_of_birth));
+    addField(
+      "Fecha de nacimiento",
+      `${formatDateOnly(patient.date_of_birth)} (${formatAge(patient.date_of_birth)})`,
+    );
     addField("Género", patient.gender);
     addField("Identificación", patient.national_id);
     addField("Correo", patient.contact_email);
