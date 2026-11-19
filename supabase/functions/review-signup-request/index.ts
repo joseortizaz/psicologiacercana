@@ -4,7 +4,8 @@
 // crea en un solo paso: la organización en estado 'trial' (la ventana de 14
 // días arranca en el momento exacto de la aprobación; la fija el trigger
 // apply_trial_window de la base de datos), la clínica, el usuario de Auth
-// (invitación por correo para crear contraseña) y el perfil de terapeuta.
+// (invitación por correo para crear contraseña) y el perfil del profesional (terapeuta o psiquiatra, según professional_type,
+// con is_org_admin = true: administra su propia clínica).
 // Al rechazar, marca la solicitud con el motivo.
 //
 // En ambos casos se le envía un correo al solicitante (ver _shared/email.ts).
@@ -198,7 +199,10 @@ Deno.serve(async (req: Request) => {
     id: newUserId,
     organization_id: org.id,
     clinic_id: clinic.id,
-    role: "therapist",
+    role: signupRequest.professional_type === "psychiatrist" ? "psychiatrist" : "therapist",
+    // Quien se registra solo es el dueño de su organización: administra su
+    // propia clínica (mismo criterio que onboard-organization para independientes).
+    is_org_admin: true,
     full_name: signupRequest.full_name,
     email: signupRequest.email,
     phone: signupRequest.phone,

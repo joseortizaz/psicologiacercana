@@ -31,6 +31,9 @@ export async function sendEmail(params: {
   subject: string;
   html: string;
   text: string;
+  // Por defecto las respuestas van al correo de soporte; el aviso interno de
+  // nuevas solicitudes lo cambia al correo del solicitante.
+  replyTo?: string;
 }): Promise<SendEmailResult> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) {
@@ -47,7 +50,7 @@ export async function sendEmail(params: {
       body: JSON.stringify({
         from: Deno.env.get("EMAIL_FROM") ?? DEFAULT_FROM,
         to: [params.to],
-        reply_to: supportEmail(),
+        reply_to: params.replyTo ?? supportEmail(),
         subject: params.subject,
         html: params.html,
         text: params.text,
@@ -161,6 +164,66 @@ export function buildApprovalEmail(params: {
   ].join("\n");
 
   return { subject: "Tu solicitud en Cercana fue aprobada", html, text };
+}
+
+// Aviso INTERNO a los administradores cuando llega una solicitud nueva.
+// No incluye ni enlaza los documentos adjuntos (son privados): se revisan en
+// el panel. Todo dato escrito por el solicitante se escapa.
+export function buildNewSignupNotificationEmail(params: {
+  fullName: string;
+  email: string;
+  professionalType: "psychologist" | "psychiatrist";
+  phone: string;
+  whatsappNumber: string;
+  licenseNumber: string;
+  specialty: string | null;
+  clinicName: string;
+  createdAt: string;
+}): { subject: string; html: string; text: string } {
+  const typeLabel = params.professionalType === "psychiatrist" ? "Psiquiatra" : "Psicólogo/a";
+  const panelUrl = `${appUrl()}/super-admin/signup-requests`;
+  const when = formatDateTime(params.createdAt);
+
+  const rows: [string, string][] = [
+    ["Nombre", params.fullName],
+    ["Tipo de profesional", typeLabel],
+    ["Correo", params.email],
+    ["Teléfono", params.phone],
+    ["WhatsApp", params.whatsappNumber],
+    ["Exequátur / licencia", params.licenseNumber],
+    ["Especialidad", params.specialty ?? "—"],
+    ["Clínica o consultorio", params.clinicName],
+    ["Recibida", when],
+  ];
+
+  const html = layout(
+    "Nueva solicitud de registro",
+    `<p>Llegó una nueva solicitud de prueba gratuita pendiente de revisión.</p>
+     <table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;margin:12px 0;font-size:14px;">
+       ${rows
+         .map(
+           ([label, value]) =>
+             `<tr><td style="padding:4px 12px 4px 0;color:#12242A99;white-space:nowrap;vertical-align:top;">${escapeHtml(label)}</td><td style="padding:4px 0;">${escapeHtml(value)}</td></tr>`,
+         )
+         .join("")}
+     </table>
+     <p style="margin:24px 0;">
+       <a href="${escapeHtml(panelUrl)}" style="background:#173A3F;color:#FAF7F2;text-decoration:none;padding:12px 20px;border-radius:6px;font-weight:bold;display:inline-block;">Revisar solicitud</a>
+     </p>
+     <p style="font-size:13px;color:#12242A99;">Los documentos adjuntos se revisan dentro del panel. Puedes responder a este correo para escribirle directamente al solicitante.</p>`,
+  );
+
+  const text = [
+    "Llegó una nueva solicitud de prueba gratuita pendiente de revisión.",
+    "",
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    "",
+    `Revisar solicitud: ${panelUrl}`,
+    "",
+    "Los documentos adjuntos se revisan dentro del panel. Puedes responder a este correo para escribirle directamente al solicitante.",
+  ].join("\n");
+
+  return { subject: `Nueva solicitud de registro: ${params.fullName} (${typeLabel})`, html, text };
 }
 
 export function buildRejectionEmail(params: {

@@ -132,6 +132,7 @@ export interface Clinic {
 }
 
 export type SignupRequestStatus = "pending" | "approved" | "rejected";
+export type SignupProfessionalType = "psychologist" | "psychiatrist";
 
 export interface SignupRequest {
   id: string;
@@ -140,6 +141,7 @@ export interface SignupRequest {
   email: string;
   phone: string | null;
   whatsapp_number: string | null;
+  professional_type: SignupProfessionalType;
   license_number: string | null;
   specialty: string | null;
   clinic_name: string;

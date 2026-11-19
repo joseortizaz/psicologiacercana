@@ -162,6 +162,10 @@ function SignupRequestCard({
           )}
         </p>
         <p>
+          <span className="text-ink/50">Profesión:</span>{" "}
+          {request.professional_type === "psychiatrist" ? "Psiquiatra" : "Psicólogo/a"}
+        </p>
+        <p>
           <span className="text-ink/50">Exequátur/licencia:</span> {request.license_number ?? "—"}
         </p>
         <p>
