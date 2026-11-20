@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { DocumentUploadField } from "@/components/DocumentUploadField";
 import type { PatientDiagnosis } from "@/lib/types";
+import { todayDR } from "@/lib/datetime";
 
 const inputClass =
   "rounded-md border border-line bg-white px-3.5 py-2.5 outline-none focus:border-deep";
@@ -31,7 +32,7 @@ export function AddEvaluationForm({
   const supabase = createClient();
 
   const [testName, setTestName] = useState("");
-  const [administeredAt, setAdministeredAt] = useState(() => new Date().toISOString().slice(0, 10));
+  const [administeredAt, setAdministeredAt] = useState(() => todayDR());
   const [scoreSummary, setScoreSummary] = useState("");
   const [interpretation, setInterpretation] = useState("");
   const [diagnosisId, setDiagnosisId] = useState("");

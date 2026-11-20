@@ -20,6 +20,7 @@ import {
   type RecordSectionSelection,
 } from "@/lib/pdf-export";
 import type { Patient } from "@/lib/types";
+import { TIME_ZONE } from "@/lib/datetime";
 
 const DEFAULT_SECTIONS: RecordSectionSelection = {
   patientInfo: true,
@@ -272,7 +273,7 @@ function PrintableRecord({
     <div style={{ fontFamily: "Arial, sans-serif", color: "#111", fontSize: "12px", lineHeight: 1.5 }}>
       <h1 style={{ fontSize: "18px", marginBottom: "2px" }}>Expediente clínico</h1>
       <p style={{ color: "#666", fontSize: "10px", marginBottom: "16px" }}>
-        Generado el {new Date().toLocaleString("es-MX", { dateStyle: "long", timeStyle: "short" })}
+        Generado el {new Date().toLocaleString("es-MX", { timeZone: TIME_ZONE, dateStyle: "long", timeStyle: "short" })}
       </p>
 
       {sections.patientInfo && (

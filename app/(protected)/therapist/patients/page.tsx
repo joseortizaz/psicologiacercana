@@ -5,6 +5,7 @@ import { ImportPatientsCsv } from "@/components/ImportPatientsCsv";
 import { UnassignedPatientsPanel } from "@/components/UnassignedPatientsPanel";
 import { ExportCsvButton } from "@/components/ExportCsvButton";
 import type { Patient, Profile } from "@/lib/types";
+import { TIME_ZONE } from "@/lib/datetime";
 
 interface PatientExportRow {
   full_name: string;
@@ -67,7 +68,7 @@ export default async function TherapistPatientsPage() {
     contact_email: p.contact_email ?? "",
     contact_phone: p.contact_phone ?? "",
     active: p.active ? "Sí" : "No",
-    created_at: new Date(p.created_at).toLocaleDateString("es-MX", { dateStyle: "medium" }),
+    created_at: new Date(p.created_at).toLocaleDateString("es-MX", { timeZone: TIME_ZONE, dateStyle: "medium" }),
   }));
 
   return (

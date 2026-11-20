@@ -16,6 +16,7 @@ import type {
   PatientDiagnosis,
   PrescriptionRecord,
 } from "@/lib/types";
+import { TIME_ZONE } from "@/lib/datetime";
 
 export interface ClinicalRecordPdfData {
   patient: Patient;
@@ -67,7 +68,7 @@ function formatDateOnly(dateStr: string) {
 }
 
 function formatDateTime(dateStr: string) {
-  return new Date(dateStr).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" });
+  return new Date(dateStr).toLocaleString("es-MX", { timeZone: TIME_ZONE, dateStyle: "medium", timeStyle: "short" });
 }
 
 /** Genera el PDF del expediente clínico como texto (no imagen/raster), a
@@ -164,7 +165,7 @@ export function buildClinicalRecordPdf(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(120, 120, 120);
-  doc.text(`Generado el ${new Date().toLocaleString("es-MX", { dateStyle: "long", timeStyle: "short" })}`, marginX, y);
+  doc.text(`Generado el ${new Date().toLocaleString("es-MX", { timeZone: TIME_ZONE, dateStyle: "long", timeStyle: "short" })}`, marginX, y);
   y += 9;
 
   const { patient, clinicalRecord, consultations, diagnoses, prescriptions } = data;

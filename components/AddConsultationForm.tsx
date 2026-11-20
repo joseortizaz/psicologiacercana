@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { ConsultationModality, ConsultationSessionType } from "@/lib/types";
+import { drDateToNoonIso, todayDR } from "@/lib/datetime";
 
 const MODALITY_OPTIONS: { value: ConsultationModality; label: string }[] = [
   { value: "in_person", label: "Presencial" },
@@ -37,7 +38,7 @@ export function AddConsultationForm({
   const router = useRouter();
   const supabase = createClient();
 
-  const [sessionDate, setSessionDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [sessionDate, setSessionDate] = useState(() => todayDR());
   const [duration, setDuration] = useState("50");
   const [modality, setModality] = useState<ConsultationModality>("in_person");
   const [sessionType, setSessionType] = useState<ConsultationSessionType>("individual");
@@ -67,7 +68,7 @@ export function AddConsultationForm({
       // session_date es timestamptz; interpretamos el <input type="date">
       // como medianoche en la hora local del navegador antes de convertir a
       // UTC, para que no se corra un día al mostrarla en zonas detrás de UTC.
-      session_date: new Date(`${sessionDate}T00:00:00`).toISOString(),
+      session_date: drDateToNoonIso(sessionDate),
       duration_minutes: Number(duration) || null,
       modality,
       session_type: sessionType,

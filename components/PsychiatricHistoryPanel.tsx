@@ -24,6 +24,7 @@ import type {
   SubstanceHabitRow,
   TextKeys,
 } from "@/lib/types";
+import { TIME_ZONE, todayDR } from "@/lib/datetime";
 
 type HKey = TextKeys<ClinicalHistorySections>;
 type SKey = TextKeys<ClinicalSensitiveHistory>;
@@ -121,7 +122,7 @@ export function PsychiatricHistoryPanel({
   const [treatmentPlan, setTreatmentPlan] = useState(record?.treatment_plan ?? "");
   const [allergies, setAllergies] = useState((record?.allergies ?? []).join(", "));
   const [dischargeDate, setDischargeDate] = useState(
-    record?.discharge_date ?? new Date().toISOString().slice(0, 10),
+    record?.discharge_date ?? todayDR(),
   );
   const [dischargeSummary, setDischargeSummary] = useState(record?.discharge_summary ?? "");
 
@@ -278,7 +279,7 @@ export function PsychiatricHistoryPanel({
           </div>
           <p className="mt-1 text-xs text-ink/50">
             Abierta el{" "}
-            {new Date(record.created_at).toLocaleString("es-MX", {
+            {new Date(record.created_at).toLocaleString("es-MX", { timeZone: TIME_ZONE,
               dateStyle: "long",
               timeStyle: "short",
             })}{" "}

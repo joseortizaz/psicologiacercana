@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { TIME_ZONE } from "@/lib/datetime";
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: "Agendada",
@@ -87,7 +88,7 @@ export default async function TherapistHomePage() {
                         )}
                       </td>
                       <td className="px-5 py-3.5 text-ink/70">
-                        {new Date(appt.start_time).toLocaleString("es-MX", {
+                        {new Date(appt.start_time).toLocaleString("es-MX", { timeZone: TIME_ZONE,
                           dateStyle: "medium",
                           timeStyle: "short",
                         })}

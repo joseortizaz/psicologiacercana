@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { EditClinicForm } from "@/components/EditClinicForm";
 import { hasAdminAccess } from "@/lib/roles";
 import type { Clinic } from "@/lib/types";
+import { TIME_ZONE } from "@/lib/datetime";
 
 export default async function EditClinicPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -42,7 +43,7 @@ export default async function EditClinicPage({ params }: { params: { id: string 
         </Link>
         <p className="mt-2 font-display text-2xl text-deep">{clinic.name}</p>
         <p className="mt-1 text-sm text-ink/50">
-          Creada el {new Date(clinic.created_at).toLocaleDateString("es-DO")}
+          Creada el {new Date(clinic.created_at).toLocaleDateString("es-DO", { timeZone: TIME_ZONE })}
         </p>
       </div>
 

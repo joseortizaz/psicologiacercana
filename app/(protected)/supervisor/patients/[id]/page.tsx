@@ -23,6 +23,7 @@ import type {
   PatientDiagnosis,
   PrescriptionRecord,
 } from "@/lib/types";
+import { TIME_ZONE } from "@/lib/datetime";
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: "Agendada",
@@ -207,7 +208,7 @@ export default async function SupervisorPatientDetailPage({
                   return (
                     <tr key={appt.id} className="border-b border-line last:border-0">
                       <td className="px-5 py-3.5 text-ink/70">
-                        {new Date(appt.start_time).toLocaleString("es-MX", {
+                        {new Date(appt.start_time).toLocaleString("es-MX", { timeZone: TIME_ZONE,
                           dateStyle: "medium",
                           timeStyle: "short",
                         })}
@@ -372,7 +373,7 @@ export default async function SupervisorPatientDetailPage({
                 <li key={c.id} className="rounded-lg border border-line bg-white/60 p-5">
                   <div className="flex items-center justify-between">
                     <p className="text-xs uppercase tracking-wide text-ink/40">
-                      {new Date(c.session_date).toLocaleDateString("es-MX", { dateStyle: "long" })}
+                      {new Date(c.session_date).toLocaleDateString("es-MX", { timeZone: TIME_ZONE, dateStyle: "long" })}
                       {" · "}
                       {MODALITY_LABELS[c.modality] ?? c.modality}
                       {cTherapist ? ` · ${cTherapist.full_name}` : ""}

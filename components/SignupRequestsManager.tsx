@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { extractFunctionErrorMessage } from "@/lib/functionError";
 import { whatsappLink } from "@/lib/phone";
 import type { SignupRequest, SignupRequestStatus } from "@/lib/types";
+import { TIME_ZONE } from "@/lib/datetime";
 
 const STATUS_LABELS: Record<SignupRequestStatus, string> = {
   pending: "Pendiente",
@@ -20,7 +21,7 @@ const STATUS_STYLES: Record<SignupRequestStatus, string> = {
 };
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-DO", {
+  return new Date(iso).toLocaleDateString("es-DO", { timeZone: TIME_ZONE,
     day: "2-digit",
     month: "short",
     year: "numeric",

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { parseCsv, csvRowsToObjects, toCsv, downloadTextFile } from "@/lib/csv";
 import type { ConsultationModality, ConsultationSessionType } from "@/lib/types";
+import { drLocalToIso } from "@/lib/datetime";
 
 const TEMPLATE_COLUMNS = [
   "patient_identifier",
@@ -176,7 +177,7 @@ export function ImportAppointmentsCsv({
         resolvedTherapistId = therapistResult.id;
       }
 
-      const start = new Date(raw.start_time.trim().replace(" ", "T"));
+      const start = new Date(drLocalToIso(raw.start_time));
       const duration = raw.duration_minutes?.trim() ? Number(raw.duration_minutes.trim()) : 50;
       const end = new Date(start.getTime() + duration * 60000);
 

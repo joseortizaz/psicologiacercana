@@ -1,3 +1,5 @@
+import { todayDR } from "@/lib/datetime";
+
 // La edad nunca se guarda: se calcula siempre a partir de la fecha de
 // nacimiento ("YYYY-MM-DD", columna `date` de Postgres) para que no se desfase.
 
@@ -15,8 +17,10 @@ export function calculateAge(
   const dob = parseDateOnly(dateOfBirth);
   if (!dob) return null;
 
-  let months = (today.getFullYear() - dob.y) * 12 + (today.getMonth() + 1 - dob.m);
-  if (today.getDate() < dob.d) months -= 1;
+  // "Hoy" en hora de RD: pasadas las 8 p. m. el servidor (UTC) ya está en el día siguiente.
+  const now = parseDateOnly(todayDR(today))!;
+  let months = (now.y - dob.y) * 12 + (now.m - dob.m);
+  if (now.d < dob.d) months -= 1;
   if (months < 0) return null;
 
   return { years: Math.floor(months / 12), months: months % 12 };

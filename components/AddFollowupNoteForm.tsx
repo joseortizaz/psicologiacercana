@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { FOLLOWUP_FIELDS } from "@/lib/followup-note";
 import type { ConsultationModality, FollowupNoteContent } from "@/lib/types";
+import { drDateToNoonIso, todayDR } from "@/lib/datetime";
 
 const MODALITY_OPTIONS: { value: ConsultationModality; label: string }[] = [
   { value: "in_person", label: "Presencial" },
@@ -31,7 +32,7 @@ export function AddFollowupNoteForm({
   const router = useRouter();
   const supabase = createClient();
 
-  const [sessionDate, setSessionDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [sessionDate, setSessionDate] = useState(() => todayDR());
   const [modality, setModality] = useState<ConsultationModality>("in_person");
   const [reason, setReason] = useState("");
   const [content, setContent] = useState<Record<keyof FollowupNoteContent, string>>({
@@ -75,7 +76,7 @@ export function AddFollowupNoteForm({
       patient_id: patientId,
       clinical_record_id: clinicalRecordId,
       therapist_id: psychiatristId,
-      session_date: new Date(`${sessionDate}T00:00:00`).toISOString(),
+      session_date: drDateToNoonIso(sessionDate),
       modality,
       session_type: "individual",
       note_format: "free",

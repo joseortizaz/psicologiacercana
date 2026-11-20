@@ -8,6 +8,7 @@ import {
   type AuditLogEntry,
 } from "@/lib/audit";
 import { hasAdminAccess } from "@/lib/roles";
+import { TIME_ZONE } from "@/lib/datetime";
 
 const MAX_ROWS = 300;
 
@@ -61,7 +62,7 @@ export default async function OrgAdminAuditPage({
   const exportRows = (logs ?? []).map((log) => {
     const actor = log.actor_id ? actorById.get(log.actor_id) : undefined;
     return {
-      occurred_at: new Date(log.occurred_at).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }),
+      occurred_at: new Date(log.occurred_at).toLocaleString("es-MX", { timeZone: TIME_ZONE, dateStyle: "short", timeStyle: "short" }),
       actor: actor ? actor.full_name : log.actor_id ? "Usuario eliminado" : "Sistema",
       action: AUDIT_ACTION_LABELS[log.action] ?? log.action,
       table_name: AUDIT_TABLE_LABELS[log.table_name] ?? log.table_name,
@@ -139,7 +140,7 @@ export default async function OrgAdminAuditPage({
                 return (
                   <tr key={log.id} className="border-b border-line last:border-0">
                     <td className="px-5 py-3.5 text-ink/70">
-                      {new Date(log.occurred_at).toLocaleString("es-MX", {
+                      {new Date(log.occurred_at).toLocaleString("es-MX", { timeZone: TIME_ZONE,
                         dateStyle: "medium",
                         timeStyle: "short",
                       })}
