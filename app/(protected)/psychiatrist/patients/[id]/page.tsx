@@ -187,6 +187,10 @@ export default async function PsychiatristPatientDetailPage({
   const memberIds = new Set((teamMembers ?? []).map((m) => m.clinician_id));
   const candidates = (clinicStaff ?? []).filter((s) => !memberIds.has(s.id));
 
+  const hasPrincipalDiagnosis = (diagnoses ?? []).some(
+    (d) => d.type === "principal" && d.status !== "descartado",
+  );
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -328,6 +332,7 @@ export default async function PsychiatristPatientDetailPage({
               psychiatristId={user!.id}
               patientId={patient.id}
               clinicalRecordId={clinicalRecord.id}
+              hasPrincipalDiagnosis={hasPrincipalDiagnosis}
             />
 
             {consultations && consultations.length > 0 ? (
@@ -381,6 +386,11 @@ export default async function PsychiatristPatientDetailPage({
               diagnosedBy={user!.id}
             />
 
+            {!hasPrincipalDiagnosis && (
+              <p role="alert" className="rounded-md border border-clay/40 bg-clay/5 px-3.5 py-2.5 text-sm text-clay">
+                Falta el diagnóstico principal. Es obligatorio para finalizar notas de seguimiento.
+              </p>
+            )}
             <DiagnosesList diagnoses={diagnoses ?? []} />
           </section>
 

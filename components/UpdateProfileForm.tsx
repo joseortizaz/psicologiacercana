@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/types";
 import { isValidPhone } from "@/lib/phone";
 
-const CLINICAL_ROLES: UserRole[] = ["therapist", "supervisor"];
+const CLINICAL_ROLES: UserRole[] = ["therapist", "supervisor", "psychiatrist"];
 
 export function UpdateProfileForm({
   role,
@@ -36,6 +36,7 @@ export function UpdateProfileForm({
   const [success, setSuccess] = useState(false);
 
   const showClinicalFields = CLINICAL_ROLES.includes(role);
+  const isPsychiatrist = role === "psychiatrist";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -101,12 +102,14 @@ export function UpdateProfileForm({
       {showClinicalFields && (
         <>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-ink/80">Cédula profesional</label>
+            <label className="text-sm font-medium text-ink/80">
+              {isPsychiatrist ? "Exequátur" : "Cédula profesional"}
+            </label>
             <input
               value={licenseNumber}
               onChange={(e) => setLicenseNumber(e.target.value)}
               className="rounded-md border border-line bg-white px-3.5 py-2.5 outline-none focus:border-deep"
-              placeholder="Opcional"
+              placeholder={isPsychiatrist ? "Se imprime en tus recetas" : "Opcional"}
             />
           </div>
 

@@ -22,12 +22,14 @@ export function AddFollowupNoteForm({
   psychiatristId,
   patientId,
   clinicalRecordId,
+  hasPrincipalDiagnosis = true,
 }: {
   organizationId: string;
   clinicId: string;
   psychiatristId: string;
   patientId: string;
   clinicalRecordId: string;
+  hasPrincipalDiagnosis?: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -53,6 +55,10 @@ export function AddFollowupNoteForm({
 
     if (!reason.trim()) {
       setError("Indica el motivo de control.");
+      return;
+    }
+    if (finalize && !hasPrincipalDiagnosis) {
+      setError("Para finalizar la nota registra primero el diagnóstico principal del paciente (sección Diagnósticos).");
       return;
     }
     // Una nota firmada sin evaluación de riesgo no se puede corregir después
