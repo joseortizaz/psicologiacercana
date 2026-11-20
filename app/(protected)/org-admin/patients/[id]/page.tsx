@@ -63,7 +63,7 @@ export default async function OrgAdminPatientDetailPage({ params }: { params: { 
       .from("profiles")
       .select("id, full_name")
       .eq("clinic_id", patient.clinic_id)
-      .eq("role", "therapist")
+      .in("role", ["therapist", "psychiatrist"])
       .order("full_name", { ascending: true })
       .returns<{ id: string; full_name: string }[]>(),
     supabase.from("clinics").select("name").eq("id", patient.clinic_id).single<{ name: string }>(),

@@ -210,7 +210,7 @@ export function EditPatientForm({
           />
         </Field>
         {assignableTherapists && (
-          <Field label="Terapeuta asignado (opcional)">
+          <Field label="Profesional asignado">
             <select
               value={selectedTherapistId}
               onChange={(e) => setSelectedTherapistId(e.target.value)}

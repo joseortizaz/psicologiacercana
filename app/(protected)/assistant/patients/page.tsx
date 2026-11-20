@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CreatePatientForm } from "@/components/CreatePatientForm";
 import { ImportPatientsCsv } from "@/components/ImportPatientsCsv";
+import { AssignProfessionalSelect } from "@/components/AssignProfessionalSelect";
 import { ExportCsvButton } from "@/components/ExportCsvButton";
 import type { Patient, Profile } from "@/lib/types";
 
@@ -18,7 +19,7 @@ interface PatientExportRow {
 const PATIENT_EXPORT_COLUMNS: { key: keyof PatientExportRow; label: string }[] = [
   { key: "full_name", label: "Nombre" },
   { key: "category", label: "Categoría" },
-  { key: "therapist", label: "Terapeuta" },
+  { key: "therapist", label: "Profesional" },
   { key: "contact_email", label: "Correo" },
   { key: "contact_phone", label: "Teléfono" },
   { key: "active", label: "Activo" },
@@ -54,7 +55,7 @@ export default async function AssistantPatientsPage() {
       .from("profiles")
       .select("id, full_name")
       .eq("clinic_id", profile!.clinic_id!)
-      .eq("role", "therapist")
+      .in("role", ["therapist", "psychiatrist"])
       .order("full_name", { ascending: true })
       .returns<{ id: string; full_name: string }[]>(),
   ]);
@@ -106,7 +107,7 @@ export default async function AssistantPatientsPage() {
               <tr className="border-b border-line text-xs uppercase tracking-wide text-ink/40">
                 <th className="px-5 py-3 font-medium">Nombre</th>
                 <th className="px-5 py-3 font-medium">Categoría</th>
-                <th className="px-5 py-3 font-medium">Terapeuta</th>
+                <th className="px-5 py-3 font-medium">Profesional</th>
                 <th className="px-5 py-3 font-medium">Correo</th>
                 <th className="px-5 py-3 font-medium">Teléfono</th>
                 <th className="px-5 py-3 font-medium">Estado</th>
@@ -124,9 +125,11 @@ export default async function AssistantPatientsPage() {
                     {CATEGORY_LABELS[patient.category] ?? patient.category}
                   </td>
                   <td className="px-5 py-3.5 text-ink/70">
-                    {patient.primary_therapist_id
-                      ? (therapistNameById.get(patient.primary_therapist_id) ?? "—")
-                      : "Sin asignar"}
+                    {patient.primary_therapist_id ? (
+                      (therapistNameById.get(patient.primary_therapist_id) ?? "—")
+                    ) : (
+                      <AssignProfessionalSelect patientId={patient.id} options={therapists ?? []} />
+                    )}
                   </td>
                   <td className="px-5 py-3.5 text-ink/70">{patient.contact_email ?? "—"}</td>
                   <td className="px-5 py-3.5 text-ink/70">{patient.contact_phone ?? "—"}</td>

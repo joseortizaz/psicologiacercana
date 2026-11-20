@@ -39,7 +39,7 @@ export default async function SupervisorPatientsPage() {
     supabase
       .from("profiles")
       .select("id, full_name")
-      .eq("role", "therapist")
+      .in("role", ["therapist", "psychiatrist"])
       .returns<{ id: string; full_name: string }[]>(),
   ]);
 

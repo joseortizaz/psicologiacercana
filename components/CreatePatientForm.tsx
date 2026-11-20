@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { PatientCategory } from "@/lib/types";
@@ -45,6 +45,7 @@ export function CreatePatientForm({
   createdBy,
   assignableTherapists,
   assignableClinics,
+  defaultTherapistId,
 }: {
   organizationId: string;
   /** Clínica fija (uso desde assistant/therapist, que operan en una sola clínica). */
@@ -60,6 +61,9 @@ export function CreatePatientForm({
   /** Si se da, se muestra un selector de clínica en vez de usar clinicId fijo
    *  (uso desde el panel de org_admin, que gestiona varias clínicas). */
   assignableClinics?: { id: string; name: string }[];
+  /** Profesional preseleccionado (por ejemplo, el propio usuario si es psicólogo/psiquiatra
+   *  y crea pacientes desde Administración). */
+  defaultTherapistId?: string;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -77,6 +81,18 @@ export function CreatePatientForm({
         (t) => !t.clinic_id || t.clinic_id === selectedClinicId,
       )
     : (assignableTherapists ?? []);
+
+  // Preselección: el profesional por defecto, o el único disponible en la clínica.
+  // Así una secretaria que trabaja con un solo profesional no tiene que elegir
+  // nada, y un profesional independiente nunca crea pacientes huérfanos.
+  useEffect(() => {
+    if (!assignableTherapists || selectedTherapistId) return;
+    if (defaultTherapistId && therapistOptions.some((t) => t.id === defaultTherapistId)) {
+      setSelectedTherapistId(defaultTherapistId);
+    } else if (therapistOptions.length === 1) {
+      setSelectedTherapistId(therapistOptions[0].id);
+    }
+  }, [assignableTherapists, therapistOptions, selectedTherapistId, defaultTherapistId]);
 
   const [fullName, setFullName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -256,7 +272,7 @@ export function CreatePatientForm({
           </Field>
         )}
         {assignableTherapists && (
-          <Field label="Terapeuta asignado (opcional)">
+          <Field label="Profesional asignado">
             <select
               value={selectedTherapistId}
               onChange={(e) => setSelectedTherapistId(e.target.value)}

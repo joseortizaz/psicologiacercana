@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CreatePatientForm } from "@/components/CreatePatientForm";
 import { ImportPatientsCsv } from "@/components/ImportPatientsCsv";
+import { UnassignedPatientsPanel } from "@/components/UnassignedPatientsPanel";
 import { ExportCsvButton } from "@/components/ExportCsvButton";
 import type { Patient, Profile } from "@/lib/types";
 
@@ -42,6 +43,17 @@ export default async function TherapistPatientsPage() {
     .eq("id", user!.id)
     .single<Profile>();
 
+  // Pacientes de la clínica sin profesional (registrados por una secretaria,
+  // por ejemplo): el profesional se los puede asignar con un clic.
+  let unassignedQuery = supabase
+    .from("patients")
+    .select("id, full_name")
+    .is("primary_therapist_id", null)
+    .eq("active", true)
+    .order("full_name", { ascending: true });
+  if (profile?.clinic_id) unassignedQuery = unassignedQuery.eq("clinic_id", profile.clinic_id);
+  const { data: unassigned } = await unassignedQuery.returns<{ id: string; full_name: string }[]>();
+
   const { data: patients } = await supabase
     .from("patients")
     .select("id, full_name, category, contact_email, contact_phone, active, created_at")
@@ -81,6 +93,8 @@ export default async function TherapistPatientsPage() {
           />
         </div>
       </div>
+
+      <UnassignedPatientsPanel professionalId={user!.id} patients={unassigned ?? []} />
 
       {patients && patients.length > 0 ? (
         <div className="overflow-hidden rounded-lg border border-line bg-white/60">
