@@ -72,7 +72,7 @@ export default async function AssistantPatientDetailPage({ params }: { params: {
       .from("profiles")
       .select("id, full_name")
       .eq("clinic_id", profile!.clinic_id!)
-      .eq("role", "therapist")
+      .in("role", ["therapist", "psychiatrist"])
       .order("full_name", { ascending: true })
       .returns<{ id: string; full_name: string }[]>(),
   ]);

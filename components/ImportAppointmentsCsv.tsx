@@ -139,12 +139,12 @@ export function ImportAppointmentsCsv({
       .from("profiles")
       .select("id")
       .eq("clinic_id", selectedClinicId)
-      .eq("role", "therapist")
+      .in("role", ["therapist", "psychiatrist"])
       .eq("email", email.trim())
       .maybeSingle();
 
     if (error) return { error: error.message };
-    if (!data) return { error: `no se encontró un terapeuta activo con correo "${email.trim()}"` };
+    if (!data) return { error: `no se encontró un profesional (psicólogo/psiquiatra) activo con correo "${email.trim()}"` };
     return { id: data.id };
   }
 

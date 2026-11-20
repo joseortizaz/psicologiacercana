@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CreatePatientForm } from "@/components/CreatePatientForm";
 import { ImportPatientsCsv } from "@/components/ImportPatientsCsv";
+import { AssignProfessionalSelect } from "@/components/AssignProfessionalSelect";
 import { ExportCsvButton } from "@/components/ExportCsvButton";
 import { hasAdminAccess } from "@/lib/roles";
 import type { Clinic, Patient, Profile } from "@/lib/types";
@@ -22,7 +23,7 @@ const PATIENT_EXPORT_COLUMNS: { key: keyof PatientExportRow; label: string }[] =
   { key: "full_name", label: "Nombre" },
   { key: "clinic", label: "Sucursal" },
   { key: "category", label: "Categoría" },
-  { key: "therapist", label: "Terapeuta" },
+  { key: "therapist", label: "Profesional" },
   { key: "contact_email", label: "Correo" },
   { key: "contact_phone", label: "Teléfono" },
   { key: "active", label: "Activo" },
@@ -81,7 +82,7 @@ export default async function OrgAdminPatientsPage({
     supabase
       .from("profiles")
       .select("id, full_name, clinic_id")
-      .eq("role", "therapist")
+      .in("role", ["therapist", "psychiatrist"])
       .order("full_name", { ascending: true })
       .returns<{ id: string; full_name: string; clinic_id: string | null }[]>(),
   ]);
@@ -134,6 +135,9 @@ export default async function OrgAdminPatientsPage({
                   full_name: t.full_name,
                   clinic_id: t.clinic_id ?? undefined,
                 }))}
+                defaultTherapistId={
+                  profile.role === "therapist" || profile.role === "psychiatrist" ? user!.id : undefined
+                }
               />
             </>
           )}
@@ -176,7 +180,7 @@ export default async function OrgAdminPatientsPage({
                 <th className="px-5 py-3 font-medium">Nombre</th>
                 <th className="px-5 py-3 font-medium">Sucursal</th>
                 <th className="px-5 py-3 font-medium">Categoría</th>
-                <th className="px-5 py-3 font-medium">Terapeuta</th>
+                <th className="px-5 py-3 font-medium">Profesional</th>
                 <th className="px-5 py-3 font-medium">Correo</th>
                 <th className="px-5 py-3 font-medium">Teléfono</th>
                 <th className="px-5 py-3 font-medium">Estado</th>
@@ -197,10 +201,17 @@ export default async function OrgAdminPatientsPage({
                     {CATEGORY_LABELS[patient.category] ?? patient.category}
                   </td>
                   <td className="px-5 py-3.5 text-ink/70">
-                    {patient.primary_therapist_id
-                      ? ((therapists ?? []).find((t) => t.id === patient.primary_therapist_id)
-                          ?.full_name ?? "—")
-                      : "Sin asignar"}
+                    {patient.primary_therapist_id ? (
+                      ((therapists ?? []).find((t) => t.id === patient.primary_therapist_id)
+                        ?.full_name ?? "—")
+                    ) : (
+                      <AssignProfessionalSelect
+                        patientId={patient.id}
+                        options={(therapists ?? [])
+                          .filter((t) => !t.clinic_id || t.clinic_id === patient.clinic_id)
+                          .map((t) => ({ id: t.id, full_name: t.full_name }))}
+                      />
+                    )}
                   </td>
                   <td className="px-5 py-3.5 text-ink/70">{patient.contact_email ?? "—"}</td>
                   <td className="px-5 py-3.5 text-ink/70">{patient.contact_phone ?? "—"}</td>
