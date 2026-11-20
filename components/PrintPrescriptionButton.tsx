@@ -25,6 +25,7 @@ export function PrintPrescriptionButton({
 
   const printable = printableItems(record);
   const controlled = hasControlledItems(record);
+  const missingLicense = !context.prescriber.license_number?.trim();
 
   async function handlePrint() {
     setError(null);
@@ -61,6 +62,15 @@ export function PrintPrescriptionButton({
           {loading ? "Generando..." : "Imprimir receta (A6)"}
         </button>
       </div>
+      {missingLicense && (
+        <p className="text-xs text-clay">
+          Tu exequátur no está cargado: la receta saldrá con la línea en blanco.{" "}
+          <a href="/account" className="underline">
+            Complétalo en Ajustes de cuenta
+          </a>
+          .
+        </p>
+      )}
       {controlled && (
         <p className="text-xs text-clay">
           {printable.length === 0

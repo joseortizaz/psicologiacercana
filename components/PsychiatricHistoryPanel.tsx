@@ -98,6 +98,7 @@ export function PsychiatricHistoryPanel({
   patientCategory,
   dateOfBirth,
   record,
+  hasPrincipalDiagnosis = true,
 }: {
   organizationId: string;
   clinicId: string;
@@ -106,6 +107,7 @@ export function PsychiatricHistoryPanel({
   patientCategory: string;
   dateOfBirth: string;
   record: ClinicalRecord | null;
+  hasPrincipalDiagnosis?: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -164,6 +166,13 @@ export function PsychiatricHistoryPanel({
 
     if (status === "discharged" && (!dischargeDate || !dischargeSummary.trim())) {
       setError("Para dar de alta necesitas indicar la fecha y un resumen de alta.");
+      return;
+    }
+
+    // El diagnóstico se registra una vez creada la historia, por eso solo se
+    // exige al editarla.
+    if (record && !hasPrincipalDiagnosis) {
+      setError("Antes de guardar cambios registra el diagnóstico principal del paciente (sección Diagnósticos).");
       return;
     }
 
