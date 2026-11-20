@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ExportCsvButton } from "@/components/ExportCsvButton";
+import { TIME_ZONE } from "@/lib/datetime";
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: "Agendada",
@@ -31,7 +32,7 @@ export default async function SupervisorAppointmentsPage() {
     const patient = Array.isArray(a.patient) ? a.patient[0] : a.patient;
     const therapist = Array.isArray(a.therapist) ? a.therapist[0] : a.therapist;
     return {
-      start_time: new Date(a.start_time).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }),
+      start_time: new Date(a.start_time).toLocaleString("es-MX", { timeZone: TIME_ZONE, dateStyle: "short", timeStyle: "short" }),
       patient: patient?.full_name ?? "",
       therapist: therapist?.full_name ?? "",
       modality: MODALITY_LABELS[a.modality] ?? a.modality,
@@ -41,7 +42,7 @@ export default async function SupervisorAppointmentsPage() {
 
   const groups = new Map<string, typeof appointments>();
   for (const appt of appointments ?? []) {
-    const dayKey = new Date(appt.start_time).toLocaleDateString("es-MX", {
+    const dayKey = new Date(appt.start_time).toLocaleDateString("es-MX", { timeZone: TIME_ZONE,
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -97,7 +98,7 @@ export default async function SupervisorAppointmentsPage() {
                       return (
                         <tr key={appt.id} className="border-b border-line last:border-0">
                           <td className="px-5 py-3.5 text-ink/70">
-                            {new Date(appt.start_time).toLocaleTimeString("es-MX", {
+                            {new Date(appt.start_time).toLocaleTimeString("es-MX", { timeZone: TIME_ZONE,
                               timeStyle: "short",
                             })}
                           </td>

@@ -12,6 +12,7 @@ import type {
   ClinicalSensitiveHistory,
   TextKeys,
 } from "@/lib/types";
+import { todayDR } from "@/lib/datetime";
 
 const STATUS_OPTIONS: { value: CaseStatus; label: string }[] = [
   { value: "active", label: "Activo" },
@@ -121,7 +122,7 @@ export function ClinicalRecordPanel({
     initSections(SENSITIVE_SECTION_FIELDS, record?.sensitive_history),
   );
   const [dischargeDate, setDischargeDate] = useState(
-    record?.discharge_date ?? new Date().toISOString().slice(0, 10),
+    record?.discharge_date ?? todayDR(),
   );
   const [dischargeSummary, setDischargeSummary] = useState(record?.discharge_summary ?? "");
 

@@ -1,5 +1,6 @@
 import { ExportCsvButton } from "@/components/ExportCsvButton";
 import type { PatientDiagnosis } from "@/lib/types";
+import { TIME_ZONE } from "@/lib/datetime";
 
 const TYPE_LABELS: Record<string, string> = {
   principal: "Principal",
@@ -22,7 +23,7 @@ export function DiagnosesList({ diagnoses }: { diagnoses: PatientDiagnosis[] }) 
     title: d.diagnosis_code?.title ?? "",
     type: TYPE_LABELS[d.type] ?? d.type,
     status: STATUS_LABELS[d.status] ?? d.status,
-    diagnosed_at: new Date(d.diagnosed_at).toLocaleDateString("es-MX", { dateStyle: "medium" }),
+    diagnosed_at: new Date(d.diagnosed_at).toLocaleDateString("es-MX", { timeZone: TIME_ZONE, dateStyle: "medium" }),
     diagnosed_by: d.diagnosed_by_profile?.full_name ?? "",
     notes: d.notes ?? "",
   }));
@@ -63,7 +64,7 @@ export function DiagnosesList({ diagnoses }: { diagnoses: PatientDiagnosis[] }) 
           <p className="mt-1 text-xs uppercase tracking-wide text-ink/40">
             {TYPE_LABELS[d.type] ?? d.type}
             {" · "}
-            {new Date(d.diagnosed_at).toLocaleDateString("es-MX", { dateStyle: "long" })}
+            {new Date(d.diagnosed_at).toLocaleDateString("es-MX", { timeZone: TIME_ZONE, dateStyle: "long" })}
             {d.diagnosed_by_profile?.full_name ? ` · ${d.diagnosed_by_profile.full_name}` : ""}
           </p>
           {d.notes && <p className="mt-2 text-sm text-ink/80">{d.notes}</p>}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { BillingCycle, Organization, OrganizationStatus, Plan, SubscriptionStatus } from "@/lib/types";
+import { TIME_ZONE, drLocalToIso, isoToDrLocalInput } from "@/lib/datetime";
 
 type PlanOption = Pick<
   Plan,
@@ -26,17 +27,13 @@ const SUBSCRIPTION_OPTIONS: { value: SubscriptionStatus; label: string }[] = [
   { value: "active", label: "Con plan activo" },
 ];
 
-// Valor para <input type="datetime-local"> (hora local del navegador) a
-// partir de un ISO de la base de datos.
+// Valor para <input type="datetime-local"> (hora de República Dominicana).
 function isoToLocalInput(iso: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return isoToDrLocalInput(iso);
 }
 
 function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("es-DO", {
+  return new Date(iso).toLocaleString("es-DO", { timeZone: TIME_ZONE,
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -127,11 +124,11 @@ export function EditOrganizationForm({
         timezone,
         // Solo si se editó (ver comentario en initialTrialEndsAt).
         ...(trialEndsAt !== initialTrialEndsAt
-          ? { trial_ends_at: trialEndsAt ? new Date(trialEndsAt).toISOString() : null }
+          ? { trial_ends_at: trialEndsAt ? drLocalToIso(trialEndsAt) : null }
           : {}),
         billing_cycle: billingCycle,
         ...(paidUntil !== initialPaidUntil
-          ? { paid_until: paidUntil ? new Date(paidUntil).toISOString() : null }
+          ? { paid_until: paidUntil ? drLocalToIso(paidUntil) : null }
           : {}),
         max_clinics: Number(maxClinics) || 1,
       })

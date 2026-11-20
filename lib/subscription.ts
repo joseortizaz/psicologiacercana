@@ -6,6 +6,7 @@
 // my_org_access_state(). Si cambias un plazo, cámbialo en los dos lados.
 
 import type { BillingCycle, Organization } from "@/lib/types";
+import { TIME_ZONE } from "@/lib/datetime";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const GRACE_DAYS: Record<BillingCycle, number> = { monthly: 10, annual: 20 };
@@ -31,5 +32,5 @@ export function isLocked(org: OrgDates, now = new Date()): boolean {
 }
 
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("es-DO", { timeZone: TIME_ZONE, day: "2-digit", month: "short", year: "numeric" });
 }

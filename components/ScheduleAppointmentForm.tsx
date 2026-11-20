@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { ConsultationModality, ConsultationSessionType } from "@/lib/types";
+import { drLocalToIso } from "@/lib/datetime";
 
 const MODALITY_OPTIONS: { value: ConsultationModality; label: string }[] = [
   { value: "in_person", label: "Presencial" },
@@ -54,7 +55,7 @@ export function ScheduleAppointmentForm({
     setLoading(true);
     setError(null);
 
-    const start = new Date(startTime);
+    const start = new Date(drLocalToIso(startTime));
     const end = new Date(start.getTime() + (Number(duration) || 50) * 60000);
 
     const { error: insertError } = await supabase.from("appointments").insert({

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { isLocked } from "@/lib/subscription";
 import type { Organization } from "@/lib/types";
+import { TIME_ZONE } from "@/lib/datetime";
 
 const STATUS_LABELS: Record<Organization["status"], string> = {
   active: "Activa",
@@ -81,7 +82,7 @@ export function OrganizationsTable({ initialOrganizations }: { initialOrganizati
                   <span className="ml-2 rounded-full bg-clay/15 px-2 py-0.5 text-xs font-medium text-clay">
                     Prueba
                     {org.trial_ends_at
-                      ? ` · vence ${new Date(org.trial_ends_at).toLocaleDateString("es-DO")}`
+                      ? ` · vence ${new Date(org.trial_ends_at).toLocaleDateString("es-DO", { timeZone: TIME_ZONE })}`
                       : ""}
                   </span>
                 )}
@@ -99,7 +100,7 @@ export function OrganizationsTable({ initialOrganizations }: { initialOrganizati
                 )}
               </td>
               <td className="px-5 py-3.5 text-ink/50">
-                {new Date(org.created_at).toLocaleDateString("es-DO")}
+                {new Date(org.created_at).toLocaleDateString("es-DO", { timeZone: TIME_ZONE })}
               </td>
               <td className="px-5 py-3.5 text-right">
                 {org.status !== "cancelled" && (

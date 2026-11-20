@@ -5,6 +5,7 @@ import { EditOrganizationForm } from "@/components/EditOrganizationForm";
 import { ResendAccessPanel, type AccessUser } from "@/components/ResendAccessPanel";
 import { SubscriptionPanel, type OrgContact } from "@/components/SubscriptionPanel";
 import type { Organization, SubscriptionPayment } from "@/lib/types";
+import { TIME_ZONE } from "@/lib/datetime";
 
 export default async function EditOrganizationPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -79,7 +80,7 @@ export default async function EditOrganizationPage({ params }: { params: { id: s
         </Link>
         <p className="mt-2 font-display text-2xl text-deep">{organization.name}</p>
         <p className="mt-1 text-sm text-ink/50">
-          Registrada el {new Date(organization.created_at).toLocaleDateString("es-DO")}
+          Registrada el {new Date(organization.created_at).toLocaleDateString("es-DO", { timeZone: TIME_ZONE })}
         </p>
       </div>
 
