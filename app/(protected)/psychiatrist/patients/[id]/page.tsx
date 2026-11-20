@@ -324,6 +324,7 @@ export default async function PsychiatristPatientDetailPage({
               patientCategory={patient.category}
               dateOfBirth={patient.date_of_birth}
               record={clinicalRecord}
+              hasPrincipalDiagnosis={hasPrincipalDiagnosis}
             />
 
             <AddFollowupNoteForm
